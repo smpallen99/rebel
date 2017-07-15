@@ -7,9 +7,13 @@ defmodule Rebel.Mixfile do
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     elixirc_paths: elixirc_paths(Mix.env),
      deps: deps()]
   end
 
+  # Specifies which paths to compile per environment.
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_),     do: ["lib"]
   # Configuration for the OTP application
   #
   # Type "mix help compile.app" for more information
@@ -29,6 +33,12 @@ defmodule Rebel.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    []
+    [{:phoenix, "~> 1.2"},
+     {:phoenix_html, "~> 2.6"},
+     {:phoenix_pubsub, "~> 1.0"},
+     {:phoenix_live_reload, "~> 1.0", only: :dev},
+     {:cowboy, "~> 1.0", only: :test},
+     {:ex_doc, "~> 0.16", only: :dev},
+    ]
   end
 end

@@ -3,16 +3,18 @@ defmodule Rebel do
   Documentation for Rebel.
   """
 
-  @doc """
-  Hello world.
+  @doc false
+  def tokenize(socket, what, salt \\ "rebel token") do
+    Phoenix.Token.sign(socket, salt, what)
+  end
 
-  ## Examples
-
-      iex> Rebel.hello
-      :world
-
-  """
-  def hello do
-    :world
+  @doc false
+  def detokenize(socket, token, salt \\ "rebel token") do
+    case Phoenix.Token.verify(socket, salt, token) do
+      {:ok, detokenized} ->
+        detokenized
+      {:error, reason} ->
+        raise "Can't verify the token `#{salt}`: #{inspect(reason)}" # let it die
+    end
   end
 end
