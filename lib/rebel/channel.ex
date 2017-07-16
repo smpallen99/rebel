@@ -100,7 +100,9 @@ defmodule Rebel.Channel do
         [_ | broadcast_topic] = String.split event, ":"
         # socket already contains controller and action
         socket_with_topic =
-          assign(socket, :__broadcast_topic, broadcast_topic)
+          socket
+          |> assign(:__broadcast_topic, broadcast_topic)
+          |> assign(:__channel_name, __MODULE__.name())
 
         # {:ok, pid} = Drab.start_link(socket)
 

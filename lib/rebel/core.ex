@@ -187,6 +187,54 @@ defmodule Rebel.Core do
   end
 
   @doc """
+  Asynchronously broadcasts given javascript to all browsers listening on the given subject.
+
+  The subject is derived from the first argument, which could be:
+
+  * socket - in this case broadcasting option is derived from the setup in the commander.
+    See `Rebel.Commander.broadcasting/1` for the broadcasting options
+
+  * same_path(string) - sends the JS to browsers sharing (and configured as listening to same_path
+    in `Rebel.Commander.broadcasting/1`) the same url
+
+  * same_commander(atom) - broadcast goes to all browsers configured with :same_commander
+
+  * same_topic(string) - broadcast goes to all browsers listening to this topic; notice: this
+    is internal Rebel topic, not a Phoenix Socket topic
+
+  First argument may be a list of the above.
+
+  The second argument is a JavaScript string.
+
+  See `Rebel.Commander.broadcasting/1` to find out how to change the listen subject.
+
+      iex> Rebel.Core.broadcast_js(socket, "alert('Broadcasted!')")
+      {:ok, :broadcasted}
+      iex> Rebel.Core.broadcast_js(same_path("/drab/live"), "alert('Broadcasted!')")
+      {:ok, :broadcasted}
+      iex> Rebel.Core.broadcast_js(same_controller(MyApp.LiveController), "alert('Broadcasted!')")
+      {:ok, :broadcasted}
+      iex> Rebel.Core.broadcast_js(same_topic("my_topic"), "alert('Broadcasted!')")
+      {:ok, :broadcasted}
+      iex> Rebel.Core.broadcast_js([same_topic("my_topic"), same_path("/drab/live")], "alert('Broadcasted!')")
+      {:ok, :broadcasted}
+
+  Returns `{:ok, :broadcasted}`
+  """
+  def broadcast_js(subject, js, _options \\ []) do
+    ret = Rebel.broadcast(subject, self(), "broadcastjs", js: js)
+    {ret, :broadcasted}
+  end
+
+  @doc """
+  Bang version of `Rebel.Core.broadcast_js/3`
+  """
+  def broadcast_js!(subject, js, _options \\ []) do
+    Rebel.broadcast(subject, self(), "broadcastjs", js: js)
+    subject
+  end
+
+  @doc """
   Helper for broadcasting functions, returns topic for a given URL path.
 
       iex> same_path("/test/live")

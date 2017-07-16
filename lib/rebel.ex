@@ -39,7 +39,7 @@ defmodule Rebel do
   end
 
   def broadcast(subject, _pid, message, payload) when is_binary(subject) do
-    Phoenix.Channel.Server.broadcast Rebel.Config.pubsub(), "__drab:#{subject}", message, Map.new(payload)
+    Phoenix.Channel.Server.broadcast Rebel.Config.pubsub(), "__rebel:#{subject}", message, Map.new(payload)
   end
 
   def broadcast(topics, _pid, _ref, message, payload) when is_list(topics) do
