@@ -234,6 +234,22 @@ defmodule Rebel.Core do
     subject
   end
 
+  def get_store(socket) do
+    socket.assigns.__rebel_store
+  end
+  def get_store(socket, key, default \\ nil) do
+    socket.assigns.__rebel_store[key] || default
+  end
+
+  def put_store(socket, key, value) do
+    struct socket, assigns: put_in(socket.assigns,
+      [:__rebel_store, key], value)
+  end
+
+  def set_store(socket, store \\ %{}) do
+    struct socket, assigns: Map.put(socket.assigns, :__rebel_store, store)
+  end
+
   @doc """
   Helper for broadcasting functions, returns topic for a given URL path.
 

@@ -3,6 +3,22 @@ defmodule Rebel do
   Documentation for Rebel.
   """
 
+  # require Logger
+
+
+  # @type t :: %Rebel{store: map, session: map, commander: atom, socket: Phoenix.Socket.t, priv: map}
+
+  # defstruct store: %{}, session: %{}, commander: nil, socket: nil, priv: %{}
+
+  ###############
+  # Public API
+
+  # @doc false
+  # def start_link(socket) do
+  #   GenServer.start_link(__MODULE__,
+  #     %__MODULE__{channel: __MODULE__.get_channel(socket)})
+  # end
+
   @doc false
   def push_and_wait_for_response(socket, pid, message, payload \\ [], options \\ []) do
     ref = make_ref()
@@ -68,4 +84,14 @@ defmodule Rebel do
         raise "Can't verify the token `#{salt}`: #{inspect(reason)}" # let it die
     end
   end
+
+  ###################
+  # Callbacks
+
+
+  # @doc false
+  # def init(state) do
+  #   Process.flag(:trap_exit, true)
+  #   {:ok, state}
+  # end
 end

@@ -78,12 +78,19 @@ defmodule Rebel.Channel do
       # end
 
       defp verify_and_cast(event_name, [payload, event_handler_function, reply_to], socket) do
+        IO.inspect socket, label: "socket"
+        return_pid = self()
         spawn_link fn ->
           event_handler = String.to_existing_atom(event_handler_function)
           try do
             check_handler_existence! __MODULE__, event_handler
             payload = Map.delete payload, "event_handler_function"
-            apply __MODULE__, event_handler, [socket, payload]
+            case apply __MODULE__, event_handler, [socket, payload] do
+              %Phoenix.Socket{assigns: assigns} ->
+                Kernel.send return_pid, {:rebel_return_assigns, assigns}
+              _ ->
+                :ok
+            end
           rescue e ->
             Logger.error "Event handler #{inspect __MODULE__}, #{inspect event_handler} failed. Error #{inspect e}"
 
@@ -103,6 +110,7 @@ defmodule Rebel.Channel do
           socket
           |> assign(:__broadcast_topic, broadcast_topic)
           |> assign(:__channel_name, __MODULE__.name())
+          |> Rebel.Core.set_store
 
         # {:ok, pid} = Drab.start_link(socket)
 
@@ -116,6 +124,10 @@ defmodule Rebel.Channel do
       defp verify_and_cast(:onconnect, [payload], socket) do
         Logger.info ":onconnect payload: #{inspect payload}"
         {:noreply, socket}
+      end
+
+      def handle_info({:rebel_return_assigns, assigns}, socket) do
+        {:noreply, struct(socket, assigns: assigns)}
       end
 
       def handle_in("onload", payload, socket) do
