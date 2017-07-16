@@ -130,6 +130,63 @@ defmodule Rebel.Core do
   def js_templates(), do: ["rebel.core.js"]
 
   @doc """
+  Synchronously executes the given javascript on the client side.
+
+  Returns tuple `{status, return_value}`, where status could be `:ok` or `:error`, and return value
+  contains the output computed by the Javascript or the error message.
+
+  ### Options
+
+  * `timeout` in milliseconds
+
+  ### Examples
+
+      iex> socket |> exec_js("2 + 2")
+      {:ok, 4}
+
+      iex> socket |> exec_js("not_existing_function()")
+      {:error, "not_existing_function is not defined"}
+
+      iex> socket |> exec_js("for(i=0; i<1000000000; i++) {}")
+      {:error, "timed out after 5000 ms."}
+
+      iex> socket |> exec_js("alert('hello from IEx!')", timeout: 500)
+      {:error, "timed out after 500 ms."}
+
+  """
+  def exec_js(socket, js, options \\ []) do
+    Rebel.push_and_wait_for_response(socket, self(), "execjs", [js: js], options)
+  end
+
+  @doc """
+  Exception raising version of `exec_js/2`
+
+  ### Examples
+
+        iex> socket |> exec_js!("2 + 2")
+        4
+
+        iex> socket |> exec_js!("nonexistent")
+        ** (Rebel.JSExecutionError) nonexistent is not defined
+            (drab) lib/drab/core.ex:100: Rebel.Core.exec_js!/2
+
+        iex> socket |> exec_js!("for(i=0; i<1000000000; i++) {}")
+        ** (Rebel.JSExecutionError) timed out after 5000 ms.
+            (drab) lib/drab/core.ex:100: Rebel.Core.exec_js!/2
+
+        iex> socket |> exec_js!("for(i=0; i<10000000; i++) {}", timeout: 1000)
+        ** (Rebel.JSExecutionError) timed out after 1000 ms.
+            lib/drab/core.ex:114: Rebel.Core.exec_js!/3
+
+  """
+  def exec_js!(socket, js, options \\ []) do
+    case exec_js(socket, js, options) do
+      {:ok, result} -> result
+      {:error, message} -> raise Rebel.JSExecutionError, message: message
+    end
+  end
+
+  @doc """
   Helper for broadcasting functions, returns topic for a given URL path.
 
       iex> same_path("/test/live")

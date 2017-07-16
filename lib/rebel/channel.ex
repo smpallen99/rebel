@@ -124,6 +124,24 @@ defmodule Rebel.Channel do
         onconnect socket, payload
       end
 
+      def handle_in("execjs", %{"ok" => [sender_encrypted, reply]}, socket) do
+        # sender contains PID of the process which sent the query
+        # sender is waiting for the result
+        {sender, ref} = sender(socket, sender_encrypted)
+        send(sender,
+          { :got_results_from_client, :ok, ref, reply })
+
+        {:noreply, socket}
+      end
+
+      def handle_in("execjs", %{"error" => [sender_encrypted, reply]}, socket) do
+        {sender, ref} = sender(socket, sender_encrypted)
+        send(sender,
+          { :got_results_from_client, :error, ref, reply })
+
+        {:noreply, socket}
+      end
+
       def handle_in("event", %{
           "event" => event_name,
           "payload" => payload,
