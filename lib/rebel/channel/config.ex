@@ -7,6 +7,7 @@ defmodule Rebel.Channel.Config do
     onload: nil,
     onconnect: nil,
     ondisconnect: nil,
+    name: nil,
     # by default load Drab.Query and Drab.Modal
     modules: [],
     # modules: [LivePage.Query, LivePage.Modal, LivePage.Waiter],

@@ -15,8 +15,14 @@ defmodule Rebel.Controller do
               list ->
                 list
             end
+          opts =
+            if @__rebel_opts__[:default_channel] do
+              @__rebel_opts__
+            else
+              [{:default_channel, (hd channels).name()} | @__rebel_opts__]
+            end
 
-          Enum.into(@__rebel_opts__, %{channels: channels, view: view, controller: __MODULE__})
+          Enum.into(opts, %{channels: channels, view: view, controller: __MODULE__})
         end
       end
     end

@@ -25,7 +25,8 @@ defmodule Rebel.Channel do
       controller = unquote(options)[:controller] || get_module(__MODULE__, "Channel", "Controller")
       view = unquote(options)[:view] || get_module(__MODULE__, "Channel", "View")
 
-      channel_config = %Rebel.Channel.Config{controller: controller, view: view}
+      channel_config =
+        Map.from_struct %Rebel.Channel.Config{controller: controller, view: view}
 
       @options Map.merge(channel_config, o)
 
@@ -81,10 +82,11 @@ defmodule Rebel.Channel do
           event_handler = String.to_existing_atom(event_handler_function)
           try do
             check_handler_existence! __MODULE__, event_handler
-            payload = Map.delete payload, "evnet_handler_function"
-            apply __MODULE__, event_name, [socket, payload]
+            payload = Map.delete payload, "event_handler_function"
+            apply __MODULE__, event_handler, [socket, payload]
           rescue e ->
-            Logger.error "Event handler #{inspect __MODULE__}, #{inspect event_handler} failed"
+            Logger.error "Event handler #{inspect __MODULE__}, #{inspect event_handler} failed. Error #{inspect e}"
+
           end
         end
         {:noreply, socket}

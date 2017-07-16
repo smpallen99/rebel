@@ -38,6 +38,8 @@ defmodule Rebel.Client do
     # Enable Drab only if Controller compiles with `use Drab.Controller`
     # in this case controller contains function `__drab__/0`
     if Enum.member?(controller.__info__(:functions), {:__rebel__, 0}) do
+      rebel = controller.__rebel__()
+
       controller_and_action =
         Phoenix.Token.sign(conn, "controller_and_action",
         [__controller: controller,
@@ -45,16 +47,17 @@ defmodule Rebel.Client do
         __assigns: assigns])
 
       channels =
-        for channel <- controller.__rebel__()[:channels] do
-          broadcast_topic = topic(channel.__rebel__().broadcasting,
+        for channel <- rebel.channels do
+          chan_rebel = channel.__rebel__()
+          broadcast_topic = topic(chan_rebel.broadcasting,
             controller, conn.request_path)
-          {channel.__rebel__().name, broadcast_topic}
+          {chan_rebel.name, broadcast_topic}
         end
 
       # modules = [Drab.Core | commander.__drab__().modules] # Drab.Core is included by default
       # templates = Enum.map(modules, fn x -> "#{Module.split(x) |> Enum.join(".") |> String.downcase()}.js" end)
       # templates = Rebel.Module.all_templates_for(commander.__drab__().modules)
-      templates = []
+      templates = ~w(rebel.core.js rebel.element.js rebel.events.js)
 
       # access_session = commander.__drab__().access_session
       # session = access_session
@@ -68,7 +71,9 @@ defmodule Rebel.Client do
       bindings = [
         controller_and_action: controller_and_action,
         templates: templates,
-        channels: channels
+        channels: channels,
+        rebel_session_token: "",
+        default_channel: rebel.default_channel
         # drab_session_token: session_token,
       ]
 
