@@ -48,11 +48,15 @@ defmodule Rebel.Client do
 
       channels =
         for channel <- rebel.channels do
-          chan_rebel = channel.__rebel__()
-          broadcast_topic = topic(chan_rebel.broadcasting,
-            controller, conn.request_path)
-          {chan_rebel.name, broadcast_topic}
+          if chan_rebel = channel.__rebel__()[controller] do
+            broadcast_topic = topic(chan_rebel.broadcasting,
+              controller, conn.request_path)
+            {chan_rebel.name, broadcast_topic}
+          else
+            nil
+          end
         end
+        |> Enum.reject(&is_nil/1)
 
       # modules = [Drab.Core | commander.__drab__().modules] # Drab.Core is included by default
       # templates = Enum.map(modules, fn x -> "#{Module.split(x) |> Enum.join(".") |> String.downcase()}.js" end)

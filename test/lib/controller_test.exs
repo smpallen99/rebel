@@ -1,6 +1,18 @@
 defmodule Rebel.ControllerTest do
   use ExUnit.Case, async: true
 
+  defmodule RoomChannel do
+    use Rebel.Channel
+  end
+
+  defmodule UserChannel do
+    use Rebel.Channel
+  end
+
+  defmodule PageChannel do
+    use Rebel.Channel
+  end
+
   defmodule PageController do
     use Rebel.Controller
   end
@@ -14,7 +26,7 @@ defmodule Rebel.ControllerTest do
 
   test "__rebel__" do
     page = PageController.__rebel__()
-    assert page[:channels] == [Rebel.ControllerTest.PageCommander]
+    assert page[:channels] == [Rebel.ControllerTest.PageChannel]
     assert page[:controller] == Rebel.ControllerTest.PageController
     assert page[:view] == Rebel.ControllerTest.PageView
   end

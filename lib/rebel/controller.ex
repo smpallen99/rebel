@@ -11,7 +11,7 @@ defmodule Rebel.Controller do
           channels =
             case @__rebel_opts__[:channels] do
               nil ->
-                [get_module(__MODULE__, "Controller", "Commander")]
+                [get_module(__MODULE__, "Controller", "Channel")]
               list ->
                 list
             end

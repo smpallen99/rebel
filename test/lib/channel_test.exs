@@ -1,7 +1,7 @@
 defmodule Rebel.ChannelTest do
   use ExUnit.Case, async: true
 
-  defmodule PageCommander do
+  defmodule PageChannel do
     use Rebel.Channel
   end
 

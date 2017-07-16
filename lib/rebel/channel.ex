@@ -22,13 +22,24 @@ defmodule Rebel.Channel do
 
       o = Enum.into(unquote(options) || [], %{channel: __MODULE__})
 
-      controller = unquote(options)[:controller] || get_module(__MODULE__, "Channel", "Controller")
+      controllers =
+        case unquote(options)[:controllers] do
+          nil ->
+           [unquote(options)[:controller] || get_module(__MODULE__, "Channel", "Controller")]
+          controllers -> controllers
+        end
+      # controller = unquote(options)[:controller] || get_module(__MODULE__, "Channel", "Controller")
       view = unquote(options)[:view] || get_module(__MODULE__, "Channel", "View")
 
-      channel_config =
-        Map.from_struct %Rebel.Channel.Config{controller: controller, view: view}
+      opts = for controller <- controllers, into: %{} do
+        {controller,
+          %Rebel.Channel.Config{controller: controller, view: view} |>
+          Map.from_struct() |> Map.merge(o)}
+        end
 
-      @options Map.merge(channel_config, o)
+      @options opts
+
+
 
       # unquote
       #   # opts = Map.merge(%Drab.Commander.Config{}, Enum.into(options, %{}))
@@ -44,13 +55,13 @@ defmodule Rebel.Channel do
         @options[:name] || "__rebel"
       end
 
-      @doc """
-      A shordhand for `Phoenix.View.render_to_string/3. Injects the corresponding view.
-      """
-      def render_to_string(template, assigns) do
-        view = __MODULE__.__rebel__().view
-        Phoenix.View.render_to_string(view, template, assigns)
-      end
+      # @doc """
+      # A shordhand for `Phoenix.View.render_to_string/3. Injects the corresponding view.
+      # """
+      # def render_to_string(template, assigns) do
+      #   view = __MODULE__.__rebel__().view
+      #   Phoenix.View.render_to_string(view, template, assigns)
+      # end
 
       @doc """
       A shordhand for `Phoenix.View.render_to_string/3.
