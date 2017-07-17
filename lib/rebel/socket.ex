@@ -43,6 +43,8 @@ defmodule Rebel.Socket do
           {:error, _reason} -> :error
         end
       end
+
+      defoverridable [connect: 2]
     end
   end
 

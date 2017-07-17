@@ -31,7 +31,7 @@ defmodule Rebel.Channel do
       # controller = unquote(options)[:controller] || get_module(__MODULE__, "Channel", "Controller")
       view = unquote(options)[:view] || get_module(__MODULE__, "Channel", "View")
 
-      opts = for controller <- controllers, into: %{} do
+      opts = for controller <- controllers, into: o do
         {controller,
           %Rebel.Channel.Config{controller: controller, view: view} |>
           Map.from_struct() |> Map.merge(o)}
