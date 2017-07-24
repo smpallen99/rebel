@@ -23,8 +23,6 @@ Rebel.on_connect(function(resp, channel_name, rebel) {
             e.message]
         }
       }
-      console.log('exec_js chan_name', channel_name)
-      console.log('execjs output', output, 'js', message.js)
       channel.push("execjs", output)
     })
 

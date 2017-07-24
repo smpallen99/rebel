@@ -127,7 +127,7 @@ defmodule Rebel.Channel do
           |> assign(:__channel_name, __MODULE__.name())
           |> Rebel.Core.set_store
 
-        {:ok, pid} = Rebel.start_link(socket)
+        {:ok, pid} = Rebel.start_link(socket_with_topic)
 
         socket_with_pid = assign(socket_with_topic, :__rebel_pid, pid)
 

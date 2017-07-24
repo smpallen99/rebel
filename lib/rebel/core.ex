@@ -129,6 +129,10 @@ defmodule Rebel.Core do
   # def prerequisites(), do: []
   def js_templates(), do: ["rebel.core.js"]
 
+  def async_js(socket, js, options \\ []) do
+    Rebel.push_async(socket, self(), "broadcastjs", [js: js], options)
+  end
+
   @doc """
   Synchronously executes the given javascript on the client side.
 

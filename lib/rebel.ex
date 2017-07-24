@@ -23,7 +23,7 @@ defmodule Rebel do
     GenServer.start_link __MODULE__,
       %__MODULE__{
         channel: get_channel(socket),
-        controller: get_controller(socket),
+        # controller: get_controller(socket),
         assigns: socket.assigns
       }
   end
@@ -32,10 +32,15 @@ defmodule Rebel do
     GenServer.cast socket.assigns.__rebel_pid, {:handle_fun, socket, fun}
   end
 
+  def push_async(socket, pid, message, payload \\ [], options \\ []) do
+    ref = make_ref()
+    push(socket, pid, ref, message, payload)
+    socket
+  end
+
   @doc false
   def push_and_wait_for_response(socket, pid, message, payload \\ [], options \\ []) do
     ref = make_ref()
-    Logger.info "push and wait {pid, ref} #{inspect {pid, ref}}"
     push(socket, pid, ref, message, payload)
     timeout = options[:timeout] || Rebel.Config.get(:browser_response_timeout)
     receive do
