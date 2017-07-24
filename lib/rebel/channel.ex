@@ -22,6 +22,8 @@ defmodule Rebel.Channel do
 
       o = Enum.into(unquote(options) || [], %{channel: __MODULE__})
 
+      intercepts = unquote(options)[:intercept]
+
       controllers =
         case unquote(options)[:controllers] do
           nil ->
@@ -37,9 +39,11 @@ defmodule Rebel.Channel do
           Map.from_struct() |> Map.merge(o)}
         end
 
-      @options opts
+      @options Map.put(opts, :access_session, [])
 
-
+      if intercepts do
+        intercept intercepts
+      end
 
       # unquote
       #   # opts = Map.merge(%Drab.Commander.Config{}, Enum.into(options, %{}))
@@ -82,33 +86,33 @@ defmodule Rebel.Channel do
         {:noreply, socket}
       end
 
-      # defp verify_and_cast(event_name, params, socket) do
-      #   p = [event_name, socket] ++ params
-      #   GenServer.cast(socket.assigns.__drab_pid, List.to_tuple(p))
-      #   {:noreply, socket}
-      # end
-
-      defp verify_and_cast(event_name, [payload, event_handler_function, reply_to], socket) do
-        IO.inspect socket, label: "socket"
-        return_pid = self()
-        spawn_link fn ->
-          event_handler = String.to_existing_atom(event_handler_function)
-          try do
-            check_handler_existence! __MODULE__, event_handler
-            payload = Map.delete payload, "event_handler_function"
-            case apply __MODULE__, event_handler, [socket, payload] do
-              %Phoenix.Socket{assigns: assigns} ->
-                Kernel.send return_pid, {:rebel_return_assigns, assigns}
-              _ ->
-                :ok
-            end
-          rescue e ->
-            Logger.error "Event handler #{inspect __MODULE__}, #{inspect event_handler} failed. Error #{inspect e}"
-
-          end
-        end
+      defp verify_and_cast(event_name, params, socket) do
+        p = [event_name, socket] ++ params
+        GenServer.cast(socket.assigns.__rebel_pid, List.to_tuple(p))
         {:noreply, socket}
       end
+
+      # defp verify_and_cast(event_name, [payload, event_handler_function, reply_to], socket) do
+      #   return_pid = self()
+      #   spawn_link fn ->
+      #     event_handler = String.to_existing_atom(event_handler_function)
+      #     try do
+      #       check_handler_existence! __MODULE__, event_handler
+      #       payload = Map.delete payload, "event_handler_function"
+      #       case apply __MODULE__, event_handler, [socket, payload] do
+      #         %Phoenix.Socket{assigns: assigns} ->
+      #           Kernel.send return_pid, {:rebel_return_assigns, assigns}
+      #         _ ->
+      #           :ok
+      #       end
+      #     rescue e ->
+      #       Logger.error "Event handler #{inspect __MODULE__}, #{inspect event_handler} failed. Error #{inspect e}\n" <>
+      #         inspect(Process.info(self(), :current_stacktrace), pretty: true)
+
+      #     end
+      #   end
+      #   {:noreply, socket}
+      # end
 
       defp sender(socket, sender_encrypted) do
         Rebel.detokenize(socket, sender_encrypted)
@@ -123,19 +127,19 @@ defmodule Rebel.Channel do
           |> assign(:__channel_name, __MODULE__.name())
           |> Rebel.Core.set_store
 
-        # {:ok, pid} = Drab.start_link(socket)
+        {:ok, pid} = Rebel.start_link(socket)
 
-        # socket_with_pid = assign(socket_with_topic, :__drab_pid, pid)
+        socket_with_pid = assign(socket_with_topic, :__rebel_pid, pid)
 
-        {:ok, socket_with_topic}
+        {:ok, socket_with_pid}
       end
 
       defoverridable [onload: 2, onconnect: 2, join: 3]
 
-      defp verify_and_cast(:onconnect, [payload], socket) do
-        Logger.info ":onconnect payload: #{inspect payload}"
-        {:noreply, socket}
-      end
+      # defp verify_and_cast(:onconnect, [payload], socket) do
+      #   Logger.info ":onconnect payload: #{inspect payload}"
+      #   {:noreply, socket}
+      # end
 
       def handle_info({:rebel_return_assigns, assigns}, socket) do
         {:noreply, struct(socket, assigns: assigns)}
@@ -152,7 +156,9 @@ defmodule Rebel.Channel do
       def handle_in("execjs", %{"ok" => [sender_encrypted, reply]}, socket) do
         # sender contains PID of the process which sent the query
         # sender is waiting for the result
+        Logger.info ".... reply: #{inspect reply}"
         {sender, ref} = sender(socket, sender_encrypted)
+        Logger.info "{sender, ref}: #{inspect {sender, ref}}"
         send(sender,
           { :got_results_from_client, :ok, ref, reply })
 
@@ -190,9 +196,44 @@ defmodule Rebel.Channel do
 
   def check_handler_existence!(channel_module, handler) do
     unless function_exported?(channel_module, handler, 2) do
-      raise "Regent can't find the handler: \"#{channel_module}.#{handler}/2\"."
+      raise "Rebel can't find the handler: \"#{channel_module}.#{handler}/2\"."
     end
   end
+
+  @doc """
+  Rebel may allow an access to specified Plug Session values. For this,
+  you must whitelist the keys of the session map. Only this keys will
+  be available to `Rebel.Core.get_session/2`
+
+      defmodule MyApp.MyChannel do
+        user Rebel.Channel
+
+        access_session [:user_id, :counter]
+      end
+
+  Keys are whitelisted due to security reasons. Session token is stored on
+  the client-side and it is signed, but not encrypted.
+  """
+  defmacro access_session(session_keys) when is_list(session_keys) do
+    quote do
+      access_sessions = Map.get(@options, :access_session)
+      @options Map.put(@options, :access_session, access_sessions ++ unquote(session_keys))
+    end
+  end
+
+  defmacro access_session(session_key) when is_atom(session_key) do
+    quote do
+      access_sessions = Map.get(@options, :access_session)
+      @options Map.put(@options, :access_session, [unquote(session_key) | access_sessions])
+    end
+  end
+
+  defmacro access_session(unknown_argument) do
+    raise CompileError, description: """
+      Only atom or list are allowed in `access_session`. Given: #{inspect unknown_argument}
+      """
+  end
+
   # def handle_in("execjs", %{"ok" => [sender_encrypted, reply]}, socket) do
   #   # sender contains PID of the process which sent the query
   #   # sender is waiting for the result

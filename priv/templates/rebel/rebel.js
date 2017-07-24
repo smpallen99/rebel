@@ -46,11 +46,13 @@
       })
       this.channels = {}
     },
-    run_channel: function(channel_name, broadcast_topic) {
+    run_channel: function(channel_name, session_token, broadcast_topic) {
       console.log('run_channel', channel_name, broadcast_topic)
       let rebel = window.Rebel
       let channel = {topic: broadcast_topic}
       let chan = this.socket.channel(channel_name + ":" + broadcast_topic, {})
+
+      chan.rebel_session_token = session_token
 
       // launch all on_load functions
       rebel.load.forEach((fx) => {
@@ -107,8 +109,14 @@
     on_load: function(f) {
       this.load.push(f)
     },
-    get_rebel_session_token: function() {
-      return this.session_token
+    set_rebel_store_token: (token) => {
+      <%= Rebel.Template.render_template("rebel.store.#{Rebel.Config.get(:rebel_store_storage) |> Atom.to_string}.set.js", []) %>
+    },
+    get_drab_store_token: () => {
+      <%= Rebel.Template.render_template("rebel.store.#{Rebel.Config.get(:rebel_store_storage) |> Atom.to_string}.get.js", []) %>
+    },
+    get_rebel_session_token: function(channel) {
+      return this.channels[channel].rebel_session_token
     }
   }
 
@@ -123,7 +131,7 @@
 
   console.log('about to run channels')
 
-  <%= Enum.map channels, fn {channel_name, broadcast_topic} -> %>
-    Rebel.run_channel('<%= channel_name %>', '<%= broadcast_topic %>')
+  <%= Enum.map channels, fn {channel_name, broadcast_topic, session_token} -> %>
+    Rebel.run_channel('<%= channel_name %>', '<%= session_token %>', '<%= broadcast_topic %>')
   <% end %>
 })();

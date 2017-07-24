@@ -3,10 +3,12 @@ defmodule Rebel.ChannelTest do
 
   defmodule PageChannel do
     use Rebel.Channel
+
+    access_session [:user_id]
   end
 
-  test "" do
-
+  test "access_sessions" do
+    assert Rebel.ChannelTest.PageChannel.__rebel__()[:access_session] == [:user_id]
   end
 
 end

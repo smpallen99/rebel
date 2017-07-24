@@ -237,13 +237,47 @@ defmodule Rebel.Core do
   def get_store(socket) do
     socket.assigns.__rebel_store
   end
-  def get_store(socket, key, default \\ nil) do
-    socket.assigns.__rebel_store[key] || default
+
+  def get_store(socket, key) do
+    socket.assigns.__rebel_store[key]
   end
 
+  @doc """
+  Returns the value of the Rebel store represented by the given key or `default` when key not found
+
+      counter = get_store(socket, :counter, 0)
+  """
+  def get_store(socket, key, default) do
+    get_store(socket, key) || default
+  end
+
+
+  # @doc """
+  # Returns the value of the Rebel store represented by the given key.
+
+  #     uid = get_store(socket, :user_id)
+  # """
+  # def get_store(socket, key) do
+  #   store = Rebel.get_store(Rebel.pid(socket))
+  #   store[key]
+  #   # store(socket)[key]
+  # end
+
+  @doc """
+  Saves the key => value in the Store. Returns unchanged socket.
+
+      put_store(socket, :counter, 1)
+  """
   def put_store(socket, key, value) do
-    struct socket, assigns: put_in(socket.assigns,
-      [:__rebel_store, key], value)
+    store = socket |> store() |> Map.merge(%{key => value})
+    {:ok, _} =
+      exec_js(socket,
+        "Rebel.set_rebel_store_token(\"#{tokenize_store(socket, store)}\")")
+
+    # store the store in Rebel server, to have it on terminate
+    save_store(socket, store)
+
+    socket
   end
 
   def set_store(socket, store \\ %{}) do
@@ -281,6 +315,76 @@ defmodule Rebel.Core do
     case Poison.decode(value) do
       {:ok, v} -> v
       _ -> value
+    end
+  end
+
+  @doc false
+  def save_store(socket, store) do
+    Rebel.set_store(Rebel.pid(socket), store)
+  end
+
+  @doc false
+  def save_socket(socket) do
+    Rebel.set_socket(Rebel.pid(socket), socket)
+  end
+
+  @doc """
+  Returns the value of the Plug Session represented by the given key.
+
+      counter = get_session(socket, :userid)
+
+  You must explicit which session keys you want to access in `:access_session` option in `use Rebel.Commander`.
+  """
+  def get_session(socket, key) do
+    Rebel.get_session(socket.assigns.__rebel_pid)[key]
+    # session(socket)[key]
+  end
+
+  @doc """
+  Returns the value of the Plug Session represented by the given key or `
+  default` when key not found
+
+      counter = get_session(socket, :userid, 0)
+
+  You must explicit which session keys you want to access in `
+  :access_session` option in `use Rebel.Commander`.
+  """
+  def get_session(socket, key, default) do
+    get_session(socket, key) || default
+  end
+
+  @doc false
+  def save_session(socket, session) do
+    Rebel.set_session(socket.assigns.__rebel_pid, session)
+  end
+
+  @doc false
+  def store(socket) do
+    #TODO: error {:error, "The operation is insecure."}
+    {:ok, store_token} = exec_js(socket, "Rebel.get_rebel_store_token()")
+    detokenize_store(socket, store_token)
+  end
+
+  @doc false
+  def session(socket) do
+    {:ok, session_token} = exec_js(socket, "Rebel.get_rebel_session_token()")
+    detokenize_store(socket, session_token)
+  end
+  @doc false
+  def tokenize_store(socket, store) do
+    Rebel.tokenize(socket, store, "rebel_store_token")
+  end
+
+  defp detokenize_store(_socket, rebel_store_token) when rebel_store_token == nil, do: %{} # empty store
+
+  defp detokenize_store(socket, rebel_store_token) do
+    # we just ignore wrong token and defauklt the store to %{}
+    # this is because it is read on connect, and raising here would cause infinite reconnects
+    case Phoenix.Token.verify(socket, "rebel_store_token", rebel_store_token) do
+      {:ok, rebel_store} ->
+        rebel_store
+      {:error, _reason} ->
+        %{}
     end
   end
 

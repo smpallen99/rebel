@@ -1,0 +1,1 @@
+return localStorage.rebel_store_token

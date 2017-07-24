@@ -49,9 +49,16 @@ defmodule Rebel.Client do
       channels =
         for channel <- rebel.channels do
           if chan_rebel = channel.__rebel__()[controller] do
+
+            session =
+              for key <- chan_rebel.access_session, into: %{},
+                do: {key, Plug.Conn.get_session(conn, key)}
+
+            session_token = Rebel.Core.tokenize_store(conn, session)
+
             broadcast_topic = topic(chan_rebel.broadcasting,
               controller, conn.request_path)
-            {chan_rebel.name, broadcast_topic}
+            {chan_rebel.name, broadcast_topic, session_token}
           else
             nil
           end
@@ -62,15 +69,6 @@ defmodule Rebel.Client do
       # templates = Enum.map(modules, fn x -> "#{Module.split(x) |> Enum.join(".") |> String.downcase()}.js" end)
       # templates = Rebel.Module.all_templates_for(commander.__drab__().modules)
       templates = ~w(rebel.core.js rebel.element.js rebel.events.js)
-
-      # access_session = commander.__drab__().access_session
-      # session = access_session
-      #   |> Enum.map(fn x -> {x, Plug.Conn.get_session(conn, x)} end)
-      #   |> Enum.into(%{})
-      # # Logger.debug("**** #{inspect session}")
-
-      # session_token = Drab.Core.tokenize_store(conn, session)
-      # session_token = Drab.tokenize(conn, session)
 
       bindings = [
         controller_and_action: controller_and_action,

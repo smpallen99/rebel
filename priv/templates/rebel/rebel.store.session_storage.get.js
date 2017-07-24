@@ -1,0 +1,1 @@
+return sessionStorage.rebel_store_token
