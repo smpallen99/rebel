@@ -40,6 +40,11 @@ defmodule Rebel.Client do
     if Enum.member?(controller.__info__(:functions), {:__rebel__, 0}) do
       rebel = controller.__rebel__()
 
+      {conn_opts, assigns} =
+        [{:__controller, controller} | assigns]
+        |> Keyword.pop(:conn_opts, [])
+
+      Logger.warn "{conn_opts, assigns} " <> inspect({conn_opts, assigns})
       controller_and_action =
         Phoenix.Token.sign(conn, "controller_and_action",
         [__controller: controller,
@@ -70,13 +75,19 @@ defmodule Rebel.Client do
       # templates = Rebel.Module.all_templates_for(commander.__drab__().modules)
       templates = ~w(rebel.core.js rebel.element.js rebel.events.js)
 
+      conn_opts =
+        Enum.map(conn_opts, fn {k, v} ->
+          "#{k}: #{v}"
+        end)
+        |> Enum.join(", ")
+
       bindings = [
         controller_and_action: controller_and_action,
-        templates: templates,
-        channels: channels,
-        rebel_session_token: "",
-        default_channel: rebel.default_channel
-        # drab_session_token: session_token,
+        templates:             templates,
+        channels:              channels,
+        rebel_session_token:   "",
+        default_channel:       rebel.default_channel,
+        conn_opts:             "{" <> conn_opts <>"}",
       ]
 
       js = render_template("rebel.js", bindings)

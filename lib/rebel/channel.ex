@@ -76,15 +76,13 @@ defmodule Rebel.Channel do
 
       @before_compile unquote(__MODULE__)
 
-      def onload(socket, payload) do
-        Logger.info "onload payload: #{inspect payload}"
-        {:noreply, socket}
-      end
+      # def onload(socket, payload) do
+      #   {:noreply, socket}
+      # end
 
-      def onconnect(socket, payload) do
-        Logger.info "onconnect payload: #{inspect payload}"
-        {:noreply, socket}
-      end
+      # def onconnect(socket, payload) do
+      #   {:noreply, socket}
+      # end
 
       defp verify_and_cast(event_name, params, socket) do
         p = [event_name, socket] ++ params
@@ -92,33 +90,14 @@ defmodule Rebel.Channel do
         {:noreply, socket}
       end
 
-      # defp verify_and_cast(event_name, [payload, event_handler_function, reply_to], socket) do
-      #   return_pid = self()
-      #   spawn_link fn ->
-      #     event_handler = String.to_existing_atom(event_handler_function)
-      #     try do
-      #       check_handler_existence! __MODULE__, event_handler
-      #       payload = Map.delete payload, "event_handler_function"
-      #       case apply __MODULE__, event_handler, [socket, payload] do
-      #         %Phoenix.Socket{assigns: assigns} ->
-      #           Kernel.send return_pid, {:rebel_return_assigns, assigns}
-      #         _ ->
-      #           :ok
-      #       end
-      #     rescue e ->
-      #       Logger.error "Event handler #{inspect __MODULE__}, #{inspect event_handler} failed. Error #{inspect e}\n" <>
-      #         inspect(Process.info(self(), :current_stacktrace), pretty: true)
-
-      #     end
-      #   end
-      #   {:noreply, socket}
-      # end
-
       defp sender(socket, sender_encrypted) do
         Rebel.detokenize(socket, sender_encrypted)
       end
 
-      def join(event, _, socket) do
+      def join(event, payload, socket) do
+        # Logger.warn "event: #{inspect event}"
+        # Logger.warn "payload: #{inspect payload}"
+        # Logger.warn "assigns: #{inspect socket.assigns}"
         [_ | broadcast_topic] = String.split event, ":"
         # socket already contains controller and action
         socket_with_topic =
@@ -129,36 +108,35 @@ defmodule Rebel.Channel do
 
         {:ok, pid} = Rebel.start_link(socket_with_topic)
 
+        # Logger.warn "+++++++++ Channel join self: #{inspect self()}, rebel_pid #{inspect pid}"
+
         socket_with_pid = assign(socket_with_topic, :__rebel_pid, pid)
 
         {:ok, socket_with_pid}
       end
 
-      defoverridable [onload: 2, onconnect: 2, join: 3]
-
-      # defp verify_and_cast(:onconnect, [payload], socket) do
-      #   Logger.info ":onconnect payload: #{inspect payload}"
-      #   {:noreply, socket}
-      # end
+      defoverridable [join: 3]
 
       def handle_info({:rebel_return_assigns, assigns}, socket) do
         {:noreply, struct(socket, assigns: assigns)}
       end
 
-      def handle_in("onload", payload, socket) do
-        onload socket, payload
+      def handle_in("onload", _, socket) do
+        verify_and_cast :onload, [], socket
       end
 
       def handle_in("onconnect", payload, socket) do
-        onconnect socket, payload
+        Rebel.set_socket socket.assigns.__rebel_pid, socket
+        verify_and_cast :onconnect, [payload["payload"]], socket
       end
 
       def handle_in("execjs", %{"ok" => [sender_encrypted, reply]}, socket) do
         # sender contains PID of the process which sent the query
         # sender is waiting for the result
-        Logger.info ".... reply: #{inspect reply}"
+        # Logger.warn ".... sender_encrypted: #{inspect sender_encrypted}"
+        # Logger.info ".... reply: #{inspect reply}"
         {sender, ref} = sender(socket, sender_encrypted)
-        Logger.info "{sender, ref}: #{inspect {sender, ref}}"
+        # Logger.info "{sender, ref}: #{inspect {sender, ref}}"
         send(sender,
           { :got_results_from_client, :ok, ref, reply })
 
@@ -193,6 +171,29 @@ defmodule Rebel.Channel do
       end
     end
   end
+
+  Enum.each([:onload, :onconnect, :ondisconnect], fn macro_name ->
+    @doc """
+    Sets up the callback for #{macro_name}. Receives handler function name as an atom.
+
+        #{macro_name} :event_handler_function
+
+    See `Drab.Commander` summary for details.
+    """
+    defmacro unquote(macro_name)(event_handler) when is_atom(event_handler) do
+      m = unquote(macro_name)
+      quote bind_quoted: [m: m], unquote: true do
+        Map.get(@options, m) && raise CompileError, description: "Only one `#{inspect m}` definition is allowed"
+        @options Map.put(@options, m, unquote(event_handler))
+      end
+    end
+
+    defmacro unquote(macro_name)(unknown_argument) do
+      raise CompileError, description: """
+        Only atom is allowed in `#{unquote(macro_name)}`. Given: #{inspect unknown_argument}
+        """
+    end
+  end)
 
   def check_handler_existence!(channel_module, handler) do
     unless function_exported?(channel_module, handler, 2) do
@@ -233,48 +234,5 @@ defmodule Rebel.Channel do
       Only atom or list are allowed in `access_session`. Given: #{inspect unknown_argument}
       """
   end
-
-  # def handle_in("execjs", %{"ok" => [sender_encrypted, reply]}, socket) do
-  #   # sender contains PID of the process which sent the query
-  #   # sender is waiting for the result
-  #   {sender, ref} = sender(socket, sender_encrypted)
-  #   send(sender,
-  #     { :got_results_from_client, :ok, ref, reply })
-
-  #   {:noreply, socket}
-  # end
-
-  # def handle_in("execjs", %{"error" => [sender_encrypted, reply]}, socket) do
-  #   {sender, ref} = sender(socket, sender_encrypted)
-  #   send(sender,
-  #     { :got_results_from_client, :error, ref, reply })
-
-  #   {:noreply, socket}
-  # end
-
-  # def handle_in("modal", %{"ok" => [sender_encrypted, reply]}, socket) do
-  #   # sends { "button_name", %{"Param" => "value"}}
-  #   {sender, ref} = sender(socket, sender_encrypted)
-  #   send(sender,
-  #     {
-  #       :got_results_from_client,
-  #       :ok,
-  #       ref,
-  #       {
-  #         reply["button_clicked"] |> String.to_existing_atom,
-  #         reply["params"] |> Map.delete("__drab_modal_hidden_input")
-  #       }
-  #     })
-
-  #   {:noreply, socket}
-  # end
-
-  # def handle_in("waiter", %{"drab_waiter_token" => waiter_token, "sender" => sender}, socket) do
-  #   {pid, ref} = Drab.Waiter.detokenize_waiter(socket, waiter_token)
-
-  #   send(pid, {:waiter, ref, sender})
-
-  #   {:noreply, socket}
-  # end
 
 end

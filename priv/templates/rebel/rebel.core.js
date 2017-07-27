@@ -17,6 +17,7 @@ Rebel.on_connect(function(resp, channel_name, rebel) {
             eval(message.js)]
         }
       } catch(e) {
+        console.error('execjs exception', e)
         output = {
           error: [
             message.sender,
@@ -43,6 +44,7 @@ Rebel.on_connect(function(resp, channel_name, rebel) {
     payload: payload()
   })
 
+  console.log('checking !onload_launched', !rebel.onload_launched)
   // initialize onload on server side, just once
   if (!rebel.onload_launched) {
     channel.push("onload", { store_token: Rebel.store_token })

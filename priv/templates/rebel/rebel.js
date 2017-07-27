@@ -35,7 +35,8 @@
       })
 
       this.socket = new this.Socket("<%= Rebel.Config.get(:socket) %>",
-        {params: {__rebel_return: return_token}})
+        {params: Object.assign({__rebel_return: return_token},
+          <%= conn_opts %>)})
 
       this.socket.connect()
 
@@ -50,7 +51,7 @@
       console.log('run_channel', channel_name, broadcast_topic)
       let rebel = window.Rebel
       let channel = {topic: broadcast_topic}
-      let chan = this.socket.channel(channel_name + ":" + broadcast_topic, {})
+      let chan = this.socket.channel(channel_name + ":" + broadcast_topic, <%= conn_opts %>)
 
       chan.rebel_session_token = session_token
 
@@ -112,7 +113,7 @@
     set_rebel_store_token: (token) => {
       <%= Rebel.Template.render_template("rebel.store.#{Rebel.Config.get(:rebel_store_storage) |> Atom.to_string}.set.js", []) %>
     },
-    get_drab_store_token: () => {
+    get_rebel_store_token: () => {
       <%= Rebel.Template.render_template("rebel.store.#{Rebel.Config.get(:rebel_store_storage) |> Atom.to_string}.get.js", []) %>
     },
     get_rebel_session_token: function(channel) {

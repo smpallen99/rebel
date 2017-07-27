@@ -2,13 +2,9 @@ defmodule Rebel do
   @moduledoc """
   Documentation for Rebel.
   """
-
   use GenServer
 
-  # import Rebel.Core, only: [exec_js: 2]
-
   require Logger
-
 
   # @type t :: %Rebel{store: map, session: map, commander: atom, socket: Phoenix.Socket.t, priv: map}
 
@@ -23,7 +19,7 @@ defmodule Rebel do
     GenServer.start_link __MODULE__,
       %__MODULE__{
         channel: get_channel(socket),
-        # controller: get_controller(socket),
+        controller: get_controller(socket),
         assigns: socket.assigns
       }
   end
@@ -32,7 +28,7 @@ defmodule Rebel do
     GenServer.cast socket.assigns.__rebel_pid, {:handle_fun, socket, fun}
   end
 
-  def push_async(socket, pid, message, payload \\ [], options \\ []) do
+  def push_async(socket, pid, message, payload \\ [], _options \\ []) do
     ref = make_ref()
     push(socket, pid, ref, message, payload)
     socket
@@ -161,7 +157,8 @@ defmodule Rebel do
   # Callbacks
 
   def init(state) do
-    Logger.warn "Rebel.init state: #{inspect state}"
+    # Logger.warn "Rebel.init state: #{inspect state}"
+    # Logger.warn "+++++ Rebel pid: #{inspect self()}"
     Process.flag(:trap_exit, true)
     {:ok,  state}
   end
@@ -189,12 +186,21 @@ defmodule Rebel do
     {:noreply, state}
   end
 
+  def handle_info(message, state) do
+    Logger.error """
+    Rebel.handle_info unexpected message: #{inspect message}
+    state was: #{inspect state}
+    """
+    {:noreply, state}
+  end
+
   @doc false
   def handle_cast({:onconnect, socket, payload}, %Rebel{channel: channel} = state) do
     # TODO: there is an issue when the below failed and client tried to reconnect again and again
     # tasks = [Task.async(fn -> Drab.Core.save_session(socket, Drab.Core.session(socket)) end),
     #          Task.async(fn -> Drab.Core.save_store(socket, Drab.Core.store(socket)) end)]
     # Enum.each(tasks, fn(task) -> Task.await(task) end)
+    # Logger.error "received conconnect"
 
     # Logger.debug "******"
     # Logger.debug inspect(Drab.Core.session(socket))
@@ -207,8 +213,7 @@ defmodule Rebel do
     Rebel.Core.save_store(socket, Rebel.Core.store(socket))
     Rebel.Core.save_socket(socket)
 
-    onconnect = channel_config(channel, state.controller).onconnect
-    handle_callback(socket, channel, onconnect)
+    handle_callback(socket, channel, channel.__rebel__()[:onconnect])
 
     {:noreply, state}
   end
@@ -217,9 +222,9 @@ defmodule Rebel do
   def handle_cast({:onload, socket}, %{channel: channel} = state) do
     # {_, socket} = transform_payload_and_socket(payload, socket, commander_module)
     # IO.inspect state
+    # Logger.error "received onload"
 
-    onload = channel_config(channel, state.controller).onload
-    handle_callback(socket, channel, onload) #returns socket
+    handle_callback(socket, channel, channel.__rebel__()[:onload])
     {:noreply, state}
   end
 
@@ -295,8 +300,8 @@ defmodule Rebel do
   end
 
   defp transform_payload(payload, state) do
-    Logger.info "payload: #{inspect payload}"
-    Logger.info "state: #{inspect state}"
+    # Logger.info "payload: #{inspect payload}"
+    # Logger.info "state: #{inspect state}"
 
     all_modules = Rebel.Module.all_modules_for(
       state.channel.__rebel__()[state.controller].modules)
@@ -333,9 +338,7 @@ defmodule Rebel do
     # TODO: rethink the subprocess strategies - now it is just spawn_link
     spawn_link fn ->
       try do
-        IO.inspect {channel_module, event_handler_function}, label: "{ch, fun}"
         check_handler_existence!(channel_module, event_handler_function)
-        IO.puts "after check hander"
 
         event_handler = String.to_existing_atom(event_handler_function)
         payload = Map.delete(payload, "event_handler_function")
@@ -346,7 +349,6 @@ defmodule Rebel do
         socket  = transform_socket(payload, socket, state)
 
         channel_cfg = channel_config(channel_module, controller)
-        |> IO.inspect(label: "channel_cfg")
 
         # run before_handlers first
         returns_from_befores = Enum.map(callbacks_for(event_handler, channel_cfg.before_handler),
@@ -426,7 +428,11 @@ defmodule Rebel do
   end
 
   defp do_push_or_broadcast(socket, pid, ref, message, payload, function) do
-    m = payload |> Enum.into(%{}) |> Map.merge(%{sender: tokenize(socket, {pid, ref})})
+    token = tokenize(socket, {pid, ref})
+    # Logger.warn "{pid,ref} token " <> inspect({pid, ref}) <> " : " <> inspect(token)
+    # Logger.warn "message: #{inspect message}"
+    # Logger.warn "payload: #{inspect payload}"
+    m = payload |> Enum.into(%{}) |> Map.merge(%{sender: token})
     function.(socket, message, m)
   end
 
