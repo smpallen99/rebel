@@ -22,7 +22,7 @@ defmodule Rebel.Channel do
 
       o = Enum.into(unquote(options) || [], %{channel: __MODULE__})
 
-      intercepts = unquote(options)[:intercept]
+      intercepts = unquote(options)[:intercepts]
 
       controllers =
         case unquote(options)[:controllers] do
@@ -139,6 +139,19 @@ defmodule Rebel.Channel do
       end
 
       def handle_in("execjs", %{"ok" => [sender_encrypted, reply]}, socket) do
+        # sender contains PID of the process which sent the query
+        # sender is waiting for the result
+        # Logger.warn ".... sender_encrypted: #{inspect sender_encrypted}"
+        # Logger.info ".... reply: #{inspect reply}"
+        {sender, ref} = sender(socket, sender_encrypted)
+        # Logger.info "{sender, ref}: #{inspect {sender, ref}}"
+        send(sender,
+          { :got_results_from_client, :ok, ref, reply })
+
+        {:noreply, socket}
+      end
+
+      def handle_in("modal", %{"ok" => [sender_encrypted, reply]}, socket) do
         # sender contains PID of the process which sent the query
         # sender is waiting for the result
         # Logger.warn ".... sender_encrypted: #{inspect sender_encrypted}"

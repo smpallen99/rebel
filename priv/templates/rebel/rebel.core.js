@@ -27,6 +27,11 @@ Rebel.on_connect(function(resp, channel_name, rebel) {
       channel.push("execjs", output)
     })
 
+    channel.on("modal", function(message) {
+      window.rebel_modal = message
+      eval(message.js)
+    })
+
     // broadcast does not return a meesage
     channel.on("broadcastjs", function(message) {
       eval(message.js)
