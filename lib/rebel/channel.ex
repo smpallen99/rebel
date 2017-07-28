@@ -94,6 +94,14 @@ defmodule Rebel.Channel do
         Rebel.detokenize(socket, sender_encrypted)
       end
 
+      def topic(broadcasting, controller, request_path, conn_assigns)
+      def topic(:same_path, _, path, _conn_assigns),
+        do: Rebel.Core.same_path(path)
+      def topic(:same_controller, controller, _, _),
+        do: Rebel.Core.same_controller(controller)
+      def topic(topic, _, _, _) when is_binary(topic),
+        do: Rebel.Core.same_topic(topic)
+
       def join(event, payload, socket) do
         # Logger.warn "event: #{inspect event}"
         # Logger.warn "payload: #{inspect payload}"
@@ -115,7 +123,7 @@ defmodule Rebel.Channel do
         {:ok, socket_with_pid}
       end
 
-      defoverridable [join: 3]
+      defoverridable [join: 3, topic: 4]
 
       def handle_info({:rebel_return_assigns, assigns}, socket) do
         {:noreply, struct(socket, assigns: assigns)}

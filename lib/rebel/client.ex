@@ -44,7 +44,7 @@ defmodule Rebel.Client do
         [{:__controller, controller} | assigns]
         |> Keyword.pop(:conn_opts, [])
 
-      Logger.warn "{conn_opts, assigns} " <> inspect({conn_opts, assigns})
+      # Logger.warn "{conn_opts, assigns} " <> inspect({conn_opts, assigns})
       controller_and_action =
         Phoenix.Token.sign(conn, "controller_and_action",
         [__controller: controller,
@@ -61,8 +61,8 @@ defmodule Rebel.Client do
 
             session_token = Rebel.Core.tokenize_store(conn, session)
 
-            broadcast_topic = topic(chan_rebel.broadcasting,
-              controller, conn.request_path)
+            broadcast_topic = topic(conn, channel, chan_rebel.broadcasting,
+              controller)
             {chan_rebel.name, broadcast_topic, session_token}
           else
             nil
@@ -103,7 +103,7 @@ defmodule Rebel.Client do
   end
 
   # defp topic(:all, _, _), do: "all"
-  defp topic(:same_path, _, path), do: Rebel.Core.same_path(path)
-  defp topic(:same_controller, controller, _), do: Rebel.Core.same_controller(controller)
-  defp topic(topic, _, _) when is_binary(topic), do: Rebel.Core.same_topic(topic)
+  defp topic(conn, channel, broadcasting, controller) do
+    channel.topic broadcasting, controller, conn.request_path, conn.assigns
+  end
 end
