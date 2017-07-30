@@ -118,7 +118,7 @@ defmodule Rebel do
 
   @doc false
   def detokenize(socket, token, salt \\ "rebel token") do
-    case Phoenix.Token.verify(socket, salt, token) do
+    case Phoenix.Token.verify(socket, salt, token, max_age: 86400) do
       {:ok, detokenized} ->
         detokenized
       {:error, reason} ->
