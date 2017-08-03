@@ -15,7 +15,7 @@
   }
 
   window.Rebel = {
-    run: function(return_token, session_token) {
+    run: function(return_token, session_token, broadcast_topic) {
       console.log('run', return_token, session_token)
       this.Socket = require("phoenix").Socket
 
@@ -27,12 +27,18 @@
       this.already_connected = false
       this.channels = {}
       this.default_channel = '<%= default_channel %>'
+      this.rebel_topic = broadcast_topic;
 
       var rebel = this
 
-      rebel.load.forEach((fx) => {
-        fx(rebel)
-      })
+      // rebel.load.forEach((fx) => {
+      //   fx(rebel)
+      // })
+
+      for (var i = 0; i < rebel.load.length; i++) {
+        var fx = rebel.load[i];
+        fx(rebel);
+      }
 
       this.socket = new this.Socket("<%= Rebel.Config.get(:socket) %>",
         {params: Object.assign({__rebel_return: return_token},
@@ -40,10 +46,26 @@
 
       this.socket.connect()
 
+      this.return_channel = this.socket.channel("return:" + this.rebel_topic, {});
+
+      this.return_channel.join().receive("error", function(resp) {
+        console.log("Unable to join the Rebel Channel", resp);
+      }).receive("ok", function(resp) {
+        rebel.return_channel.on("event", function(message) {
+          if (messaage.finished && rebel.event_reply_table[message.finished]) {
+            rebel.event_reply_table[message.finished]();
+            delete rebel.event_reply_table[message.finished];
+          }
+        });
+      });
+
       this.socket.onClose(function(event) {
-        rebel.disconnected.forEach(function(fx) {
-          fx(rebel)
-        })
+
+        for (var di = 0; di < drab.disconnected.length; di++) {
+          var fxd = rebel.disconnected[di];
+        // rebel.disconnected.forEach(function(fx) {
+          fxd(rebel)
+        }
       })
       this.channels = {}
     },
@@ -128,7 +150,7 @@
   %>
   console.log('about to run')
 
-  Rebel.run('<%= controller_and_action %>', '<%= rebel_session_token %>')
+  Rebel.run('<%= controller_and_action %>', '<%= rebel_session_token %>', '<%= broadcast_topic %>')
 
   console.log('about to run channels')
 

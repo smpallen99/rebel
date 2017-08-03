@@ -24,7 +24,8 @@ Rebel.on_connect(function(resp, channel_name, rebel) {
             e.message]
         }
       }
-      channel.push("execjs", output)
+      rebel.return_channel.push("execjs", output)
+      // channel.push("execjs", output)
     })
 
     channel.on("modal", function(message) {

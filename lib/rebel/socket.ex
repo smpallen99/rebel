@@ -30,6 +30,8 @@ defmodule Rebel.Socket do
         channel "#{name}:*", chan
       end
 
+      channel "return:*", Rebel.ReturnChannel
+
       def connect(%{"__rebel_return" => controller_and_action_token}, socket) do
         case Phoenix.Token.verify(socket, "controller_and_action", controller_and_action_token) do
           {:ok, [__controller: controller, __action: action, __assigns: assigns] = controller_and_action} ->

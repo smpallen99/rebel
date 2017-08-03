@@ -159,18 +159,17 @@ defmodule Rebel.Core do
 
   """
   def exec_js(socket, js, options \\ []) do
+    timeout = options[:timeout] || Rebel.Config.get(:browser_response_timeout)
     reply_pid = self()
     spawn fn ->
-      Logger.info "spawned .. self: #{inspect self()}, reply_pid: #{inspect reply_pid}"
       response = Rebel.push_and_wait_for_response(socket, self(), "execjs", [js: js], options)
-      Logger.info "got response... #{inspect response}"
       send reply_pid, {:reply, response}
     end
-    Logger.info "after spawn"
     receive do
       {:reply, response} ->
-        Logger.info "got reply response: #{inspect response}"
         response
+      after timeout ->
+        {:error, "timed out after #{timeout} ms."}
     end
   end
 

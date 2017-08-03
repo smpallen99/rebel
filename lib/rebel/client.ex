@@ -70,9 +70,6 @@ defmodule Rebel.Client do
         end
         |> Enum.reject(&is_nil/1)
 
-      # modules = [Drab.Core | commander.__drab__().modules] # Drab.Core is included by default
-      # templates = Enum.map(modules, fn x -> "#{Module.split(x) |> Enum.join(".") |> String.downcase()}.js" end)
-      # templates = Rebel.Module.all_templates_for(commander.__drab__().modules)
       templates = ~w(rebel.core.js rebel.element.js rebel.events.js)
 
       conn_opts =
@@ -88,6 +85,7 @@ defmodule Rebel.Client do
         rebel_session_token:   "",
         default_channel:       rebel.default_channel,
         conn_opts:             "{" <> conn_opts <>"}",
+        broadcast_topic:       "same_controller"
       ]
 
       js = render_template("rebel.js", bindings)
@@ -102,7 +100,6 @@ defmodule Rebel.Client do
     end
   end
 
-  # defp topic(:all, _, _), do: "all"
   defp topic(conn, channel, broadcasting, controller) do
     channel.topic broadcasting, controller, conn.request_path, conn.assigns
   end
