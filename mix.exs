@@ -33,12 +33,13 @@ defmodule Rebel.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:phoenix, "~> 1.2"},
-     {:phoenix_html, "~> 2.6"},
+    [{:phoenix, "~> 1.3"},
+     {:phoenix_html, "~> 2.0"},
      {:phoenix_pubsub, "~> 1.0"},
      {:phoenix_live_reload, "~> 1.0", only: :dev},
+     {:poison, "~> 3.1", override: true},
      {:cowboy, "~> 1.0", only: :test},
-     {:ex_doc, "~> 0.16", only: :dev},
+     {:ex_doc, "~> 0.0", only: :dev},
     ]
   end
 end
