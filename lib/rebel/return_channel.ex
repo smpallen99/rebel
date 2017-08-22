@@ -3,7 +3,7 @@ defmodule Rebel.ReturnChannel do
 
   require Logger
 
-  def join("return:" <> event, payload, socket) do
+  def join("return:" <> _event, _payload, socket) do
     {:ok, socket}
   end
 
