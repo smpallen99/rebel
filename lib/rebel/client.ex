@@ -53,10 +53,11 @@ defmodule Rebel.Client do
 
       channels =
         for channel <- rebel.channels do
-          if chan_rebel = channel.__rebel__()[controller] do
+          ch_rebel = channel.__rebel__()
+          if chan_rebel = ch_rebel[controller] do
 
             session =
-              for key <- chan_rebel.access_session, into: %{},
+              for key <- ch_rebel.access_session, into: %{},
                 do: {key, Plug.Conn.get_session(conn, key)}
 
             session_token = Rebel.Core.tokenize_store(conn, session)

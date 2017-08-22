@@ -1,4 +1,5 @@
 (function(){
+  console.log('loading rebel...')
   function uuid() {
     // borrowed from http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
     var d = new Date().getTime();
@@ -61,7 +62,7 @@
 
       this.socket.onClose(function(event) {
 
-        for (var di = 0; di < drab.disconnected.length; di++) {
+        for (var di = 0; di < rebel.disconnected.length; di++) {
           var fxd = rebel.disconnected[di];
         // rebel.disconnected.forEach(function(fx) {
           fxd(rebel)
@@ -70,12 +71,12 @@
       this.channels = {}
     },
     run_channel: function(channel_name, session_token, broadcast_topic) {
-      console.log('run_channel', channel_name, broadcast_topic)
+      console.log('run_channel', channel_name, broadcast_topic, session_token)
       let rebel = window.Rebel
       let channel = {topic: broadcast_topic}
       let chan = this.socket.channel(channel_name + ":" + broadcast_topic, <%= conn_opts %>)
 
-      chan.rebel_session_token = session_token
+      channel.rebel_session_token = session_token
 
       // launch all on_load functions
       rebel.load.forEach((fx) => {
@@ -85,9 +86,10 @@
       chan.join()
         .receive("error", (resp) => {
           // TODO: communicate it to user
-          console.log("Unable to join the Rebel Channel", channel_name, resp)
+          console.error("Unable to join the Rebel Channel", channel_name, resp)
         })
         .receive("ok", (resp) => {
+          console.log('received ok for join on channel', channel_name)
           rebel.connected.forEach((fx) => {
             fx(resp, channel_name, rebel)
           })
