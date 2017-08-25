@@ -25,7 +25,9 @@ defmodule Rebel.Socket do
 
   defmacro __using__(options) do
     quote do
-      channels = unquote(options)[:channels] || raise(":channels option required")
+      channels = unquote(options)[:channels] ||
+        raise(":channels option required")
+
       for {name ,chan} <- channels do
         channel "#{name}:*", chan
       end
@@ -33,10 +35,18 @@ defmodule Rebel.Socket do
       channel "return:*", Rebel.ReturnChannel
 
       def connect(%{"__rebel_return" => controller_and_action_token}, socket) do
-        case Phoenix.Token.verify(socket, "controller_and_action", controller_and_action_token) do
-          {:ok, [__controller: controller, __action: action, __assigns: assigns] = controller_and_action} ->
-            own_plus_external_assigns = Map.merge(Enum.into(assigns, %{}), socket.assigns)
-            socket_plus_external_assings = %Phoenix.Socket{socket | assigns: own_plus_external_assigns}
+        max_age = Application.get_env :rebel, :token_max_age, 86400
+        case Phoenix.Token.verify(socket, "controller_and_action",
+          controller_and_action_token, max_age: max_age) do
+
+          {:ok, [__controller: controller, __action: action,
+            __assigns: assigns] = controller_and_action} ->
+
+            own_plus_external_assigns = Map.merge(Enum.into(assigns, %{}),
+              socket.assigns)
+            socket_plus_external_assings = %Phoenix.Socket{socket |
+              assigns: own_plus_external_assigns}
+
             {:ok , socket_plus_external_assings
                     |> assign(:__controller, controller)
                     |> assign(:__action, action)

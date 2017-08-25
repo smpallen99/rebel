@@ -397,7 +397,12 @@ defmodule Rebel.Core do
   defp detokenize_store(socket, rebel_store_token) do
     # we just ignore wrong token and defauklt the store to %{}
     # this is because it is read on connect, and raising here would cause infinite reconnects
-    case Phoenix.Token.verify(socket, "rebel_store_token", rebel_store_token) do
+
+    # set the token max age to 1 day by default
+    max_age = Application.get_env(:rebel, :token_max_age, 86400)
+    case Phoenix.Token.verify(socket, "rebel_store_token", rebel_store_token,
+      max_age: max_age) do
+
       {:ok, rebel_store} ->
         rebel_store
       {:error, _reason} ->

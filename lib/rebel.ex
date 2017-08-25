@@ -15,7 +15,7 @@ defmodule Rebel do
 
   @doc false
   def start_link(socket) do
-    Logger.warn "Rebel.start_link socket: #{inspect socket}"
+    Logger.debug "Rebel.start_link socket: #{inspect socket}"
     GenServer.start_link __MODULE__,
       %__MODULE__{
         channel: get_channel(socket),
@@ -118,7 +118,8 @@ defmodule Rebel do
 
   @doc false
   def detokenize(socket, token, salt \\ "rebel token") do
-    case Phoenix.Token.verify(socket, salt, token, max_age: 86400) do
+    max_age = Application.get_env :rebel, :token_max_age, 86400
+    case Phoenix.Token.verify(socket, salt, token, max_age: max_age) do
       {:ok, detokenized} ->
         detokenized
       {:error, reason} ->
