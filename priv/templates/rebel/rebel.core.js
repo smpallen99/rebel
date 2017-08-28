@@ -10,7 +10,9 @@ Rebel.on_connect(function(resp, channel_name, rebel) {
     // exec is synchronous, returns the result
     channel.on("execjs", function(message) {
       var output
-      // console.log('execjs', message.js)
+      if (Rebel.log_execjs) {
+        console.log('execjs', message.js)
+      }
       try {
         output = {
           ok: [
@@ -26,7 +28,6 @@ Rebel.on_connect(function(resp, channel_name, rebel) {
         }
       }
       rebel.return_channel.push("execjs", output)
-      // channel.push("execjs", output)
     })
 
     channel.on("modal", function(message) {

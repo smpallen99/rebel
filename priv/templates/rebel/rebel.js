@@ -125,6 +125,7 @@
     disconnected: [],
     additional_payloads: [],
     event_reply_table: {},
+    disable_rebel_events: function() { },
     on_connect: function(f) {
       this.connected.push(f)
     },
