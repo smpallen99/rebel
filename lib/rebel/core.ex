@@ -249,6 +249,16 @@ defmodule Rebel.Core do
     subject
   end
 
+  def set_event_handlers(socket, selector) do
+    exec_js socket, ~s/Rebel.set_event_handlers('#{selector}')/
+    socket
+  end
+
+  def set_event_handlers!(socket, selector) do
+    broadcast_js socket, ~s/Rebel.set_event_handlers('#{selector}')/
+    socket
+  end
+
   def get_store(socket) do
     socket.assigns.__rebel_store
   end

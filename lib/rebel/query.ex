@@ -2,7 +2,7 @@ defmodule Rebel.Query do
   require Logger
 
   @methods               ~w(html text val width height innerWidth innerHeight outerWidth outerHeight position
-                            offset scrollLeft scrollTop)a
+                            offset scrollLeft scrollTop replaceWith)a
   @methods_plural        ~w(htmls texts vals widths heights innerWidths innerHeights outerWidths outerHeights positions
                             offsets scrollLefts scrollTops)a
   @methods_with_argument         ~w(attr prop css data)a
@@ -10,7 +10,7 @@ defmodule Rebel.Query do
   @insert_methods        ~w(before after prepend append)a
   @broadcast             &Rebel.Core.broadcast_js/2
   @no_broadcast          &Rebel.Core.exec_js/2
-  @html_modifiers        ~r/html|append|before|after|insertAfter|insertBefore|htmlPrefilter|prepend|replaceWidth|wrap/i
+  @html_modifiers        ~r/html|append|before|after|insertAfter|insertBefore|htmlPrefilter|prepend|replaceWith|wrap/i
 
   @moduledoc """
   Rebel Module which provides interface to jQuery on the server side. You may query (`select/2`) or manipulate

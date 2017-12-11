@@ -191,6 +191,11 @@ Rebel.set_event_handlers = function (obj) {
         if (Rebel.logEvents) {
           console.log('rebelEvent', event.target, event)
         }
+
+        var before_fun = node.getAttribute('rebel-before');
+        if (before_fun) {
+          new Function(before_fun + "(event)")()
+        }
         Rebel.setid(n);
         // send the message back to the server
         Rebel.run_handler(
@@ -204,6 +209,11 @@ Rebel.set_event_handlers = function (obj) {
               }
           <% end %>
         );
+        if (node.getAttribute('rebel-stop')) {
+          console.log('rebel-stop...');
+          event.stopPropagation();
+          return false;
+        }
       };
 
       var event_name = node.getAttribute("rebel-event");
