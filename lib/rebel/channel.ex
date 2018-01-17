@@ -12,7 +12,7 @@ defmodule Rebel.Channel do
     # modules_to_import = LivePage.Module.all_modules_for(modules)
 
     quote do
-      use Phoenix.Channel
+      use Phoenix.Channel, Keyword.get(unquote(options), :channel_opts, [])
 
       import unquote(__MODULE__)
       import Rebel.Core
