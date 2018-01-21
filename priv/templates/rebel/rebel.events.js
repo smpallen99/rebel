@@ -1,6 +1,6 @@
 console.log('loading rebel.events')
 
-const EVENTS = ["click", "change", "keyup", "keydown", "keypress"];
+const EVENTS = ["click", "change", "keyup", "keydown", "keypress", "blur", "focus"];
 const EVENTS_TO_DISABLE = <%= Rebel.Config.get(:events_to_disable_while_processing) |> Rebel.Core.encode_js %>;
 
 Rebel.disable_rebel_objects = function (disable) {
@@ -209,7 +209,7 @@ Rebel.set_event_handlers = function (obj) {
               }
           <% end %>
         );
-        if (node.getAttribute('rebel-stop')) {
+        if (n.getAttribute('rebel-stop')) {
           console.log('rebel-stop...');
           event.stopPropagation();
           return false;
