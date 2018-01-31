@@ -29,11 +29,7 @@ swal({
 }
 <% else %>
 , function() {
-    var query_output = [window.rebel_modal.sender, {
-      result: 'ok'
-    }];
-    window.Rebel.return_channel.push("modal", { ok: query_output });
-    swal.close()
+    swal.close();
 }
 <% end %>
 );
