@@ -62,6 +62,8 @@ function default_payload(sender, event) {
           if (input.checked) {
             params[key] = input.value;
           }
+        } else if (input.type == "checkbox") {
+          params[key] = input.checked.toString();
         } else {
           params[key] = input.value;
         }
