@@ -12,4 +12,13 @@ defmodule Rebel.Utils do
     |> Enum.reverse
     |> Module.concat
   end
+
+  defmacro log(message) do
+    quote do
+      if level = Application.get_env(:rebel, :logger, false) do
+        level = if level == true, do: :debug, else: level
+        Logger.log(level, fn -> unquote(message) end)
+      end
+    end
+  end
 end

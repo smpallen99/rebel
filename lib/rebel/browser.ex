@@ -1,10 +1,14 @@
 defmodule Rebel.Browser do
-  import Rebel.Core
   @moduledoc """
   Browser related functions.
 
   Provides information about connected browser, such as local datetime, user agent.
   """
+  import Rebel.Core
+
+  require Logger
+  require Rebel.Utils, as: Utils
+
 
   @doc """
   Returns local browser time as NaiveDateTime. Timezone information is not included.
@@ -50,10 +54,13 @@ defmodule Rebel.Browser do
       7200 # UTC + 02:00
   """
   def utc_offset(socket) do
-    {:ok, offset} = exec_js(socket, "new Date().getTimezoneOffset()")
-    -60 * offset
+    case exec_js(socket, "new Date().getTimezoneOffset()") do
+      {:ok, offset} -> -60 * offset
+      {:error, error} ->
+        Utils.log(error)
+        0
+    end
   end
-
 
   # def utc_now(socket) do
   #   browser_utc = exec_js!(socket, "new Date().toISOString()")
@@ -71,8 +78,12 @@ defmodule Rebel.Browser do
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) ..."
   """
   def user_agent(socket) do
-    {:ok, agent} = exec_js(socket, "navigator.userAgent")
-    agent
+    case exec_js(socket, "navigator.userAgent") do
+      {:ok, agent} -> agent
+      {:error, error} ->
+        Utils.log(error)
+        ""
+    end
   end
 
   @doc """
@@ -84,8 +95,12 @@ defmodule Rebel.Browser do
 
   """
   def language(socket) do
-    {:ok, lang} = exec_js(socket, "navigator.language")
-    lang
+    case exec_js(socket, "navigator.language") do
+      {:ok, lang} -> lang
+      {:error, error} ->
+        Utils.log(error)
+        "en"
+    end
   end
 
   @doc """
@@ -97,8 +112,12 @@ defmodule Rebel.Browser do
 
   """
   def languages(socket) do
-    {:ok, langs} = exec_js(socket, "navigator.languages")
-    langs
+    case exec_js(socket, "navigator.languages") do
+      {:ok, langs} -> langs
+      {:error, error} ->
+        Utils.log(error)
+        ""
+    end
   end
 
   @doc """
@@ -108,7 +127,12 @@ defmodule Rebel.Browser do
   handler.
   """
   def redirect_to(socket, url) do
-    {:ok, _} = exec_js(socket, "window.location = '#{url}'")
+    case exec_js(socket, "window.location = '#{url}'") do
+      {:ok, _} -> :ok
+      {:error, error} ->
+        Utils.log(error)
+        :ok
+    end
   end
 
   @doc """
