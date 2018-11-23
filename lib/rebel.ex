@@ -8,24 +8,33 @@ defmodule Rebel do
 
   # @type t :: %Rebel{store: map, session: map, commander: atom, socket: Phoenix.Socket.t, priv: map}
 
-  defstruct store: %{}, session: %{}, assigns: %{}, channel: nil, controller: nil, socket: nil, priv: %{}
+  defstruct store: %{},
+            session: %{},
+            assigns: %{},
+            channel: nil,
+            controller: nil,
+            socket: nil,
+            priv: %{}
 
   ###############
   # Public API
 
   @doc false
   def start_link(socket) do
-    Logger.debug "Rebel.start_link socket: #{inspect socket}"
-    GenServer.start_link __MODULE__,
+    Logger.debug("Rebel.start_link socket: #{inspect(socket)}")
+
+    GenServer.start_link(
+      __MODULE__,
       %__MODULE__{
         channel: get_channel(socket),
         controller: get_controller(socket),
         assigns: socket.assigns
       }
+    )
   end
 
   def cast_fun(socket, fun) do
-    GenServer.cast socket.assigns.__rebel_pid, {:handle_fun, socket, fun}
+    GenServer.cast(socket.assigns.__rebel_pid, {:handle_fun, socket, fun})
   end
 
   def push_async(socket, pid, message, payload \\ [], _options \\ []) do
@@ -39,11 +48,13 @@ defmodule Rebel do
     ref = make_ref()
     push(socket, pid, ref, message, payload)
     timeout = options[:timeout] || Rebel.Config.get(:browser_response_timeout)
+
     receive do
       {:got_results_from_client, status, ^ref, reply} ->
         {status, reply}
-      after timeout ->
-        #TODO: message is still in a queue
+    after
+      timeout ->
+        # TODO: message is still in a queue
         {:error, "timed out after #{timeout} ms."}
     end
   end
@@ -51,6 +62,7 @@ defmodule Rebel do
   @doc false
   def push_and_wait_forever(socket, pid, message, payload \\ []) do
     push(socket, pid, nil, message, payload)
+
     receive do
       {:got_results_from_client, status, _, reply} ->
         {status, reply}
@@ -96,18 +108,25 @@ defmodule Rebel do
 
   @doc false
   def broadcast(subject, pid, message, payload \\ [])
+
   def broadcast(%Phoenix.Socket{} = socket, pid, message, payload) do
     do_push_or_broadcast(socket, pid, nil, message, payload, &Phoenix.Channel.broadcast/3)
   end
 
   def broadcast(subject, _pid, message, payload) when is_binary(subject) do
-    Phoenix.Channel.Server.broadcast Rebel.Config.pubsub(), "__rebel:#{subject}", message, Map.new(payload)
+    Phoenix.Channel.Server.broadcast(
+      Rebel.Config.pubsub(),
+      "__rebel:#{subject}",
+      message,
+      Map.new(payload)
+    )
   end
 
   def broadcast(topics, _pid, _ref, message, payload) when is_list(topics) do
     for topic <- topics do
       broadcast(topic, nil, message, payload)
     end
+
     :ok
   end
 
@@ -118,12 +137,15 @@ defmodule Rebel do
 
   @doc false
   def detokenize(socket, token, salt \\ "rebel token") do
-    max_age = Application.get_env :rebel, :token_max_age, 86400
+    max_age = Application.get_env(:rebel, :token_max_age, 86400)
+
     case Phoenix.Token.verify(socket, salt, token, max_age: max_age) do
       {:ok, detokenized} ->
         detokenized
+
       {:error, reason} ->
-        raise "Can't verify the token `#{salt}`: #{inspect(reason)}" # let it die
+        # let it die
+        raise "Can't verify the token `#{salt}`: #{inspect(reason)}"
     end
   end
 
@@ -161,7 +183,7 @@ defmodule Rebel do
     # Logger.warn "Rebel.init state: #{inspect state}"
     # Logger.warn "+++++ Rebel pid: #{inspect self()}"
     Process.flag(:trap_exit, true)
-    {:ok,  state}
+    {:ok, state}
   end
 
   @doc false
@@ -180,18 +202,20 @@ defmodule Rebel do
   @doc false
   def handle_info({:EXIT, pid, {reason, stack}}, state) when pid != self() do
     # subprocess died
-    Logger.error """
+    Logger.error("""
     Rebel Process #{inspect(pid)} died because of #{inspect(reason)}
     #{Exception.format_stacktrace(stack)}
-    """
+    """)
+
     {:noreply, state}
   end
 
   def handle_info(message, state) do
-    Logger.error """
-    Rebel.handle_info unexpected message: #{inspect message}
-    state was: #{inspect state}
-    """
+    Logger.error("""
+    Rebel.handle_info unexpected message: #{inspect(message)}
+    state was: #{inspect(state)}
+    """)
+
     {:noreply, state}
   end
 
@@ -208,7 +232,7 @@ defmodule Rebel do
 
     # IO.inspect payload
 
-    socket  = transform_socket(payload, socket, state)
+    socket = transform_socket(payload, socket, state)
 
     Rebel.Core.save_session(socket, Rebel.Core.session(socket))
     Rebel.Core.save_store(socket, Rebel.Core.store(socket))
@@ -232,11 +256,11 @@ defmodule Rebel do
   # casts for update values from the state
   Enum.each([:assigns, :store, :session, :socket, :priv], fn name ->
     msg_name = "set_#{name}" |> String.to_atom()
-      @doc false
-      def handle_cast({unquote(msg_name), value}, state) do
-        new_state = Map.put(state, unquote(name), value)
-        {:noreply, new_state}
-      end
+    @doc false
+    def handle_cast({unquote(msg_name), value}, state) do
+      new_state = Map.put(state, unquote(name), value)
+      {:noreply, new_state}
+    end
   end)
 
   def handle_cast({:put_assigns, value}, state) do
@@ -248,7 +272,7 @@ defmodule Rebel do
   end
 
   def handle_cast({:handle_fun, socket, fun}, state) do
-    handle_fun socket, fun, state
+    handle_fun(socket, fun, state)
   end
 
   @doc false
@@ -260,11 +284,11 @@ defmodule Rebel do
   # calls for get values from the state
   Enum.each([:store, :session, :socket, :priv], fn name ->
     msg_name = "get_#{name}" |> String.to_atom()
-      @doc false
-      def handle_call(unquote(msg_name), _from, state) do
-        value = Map.get(state, unquote(name))
-        {:reply, value, state}
-      end
+    @doc false
+    def handle_call(unquote(msg_name), _from, state) do
+      value = Map.get(state, unquote(name))
+      {:reply, value, state}
+    end
   end)
 
   def handle_call(:get_assigns, _, state) do
@@ -277,9 +301,10 @@ defmodule Rebel do
 
   def terminate(_reason, %Rebel{store: store, session: session, channel: channel} = state) do
     if channel.__rebel__()[state.controller].ondisconnect do
-      :ok = apply channel, channel_config(channel, state.controller).ondisconnect,
-        [store, session]
+      :ok =
+        apply(channel, channel_config(channel, state.controller).ondisconnect, [store, session])
     end
+
     {:noreply, state}
   end
 
@@ -289,14 +314,16 @@ defmodule Rebel do
   defp handle_callback(socket, channel, callback) do
     if callback do
       # TODO: rethink the subprocess strategies - now it is just spawn_link
-      spawn_link fn ->
+      spawn_link(fn ->
         try do
           apply(channel, callback, [socket])
-        rescue e ->
-          failed(socket, e)
+        rescue
+          e ->
+            failed(socket, e)
         end
-      end
+      end)
     end
+
     socket
   end
 
@@ -304,40 +331,48 @@ defmodule Rebel do
     # Logger.info "payload: #{inspect payload}"
     # Logger.info "state: #{inspect state}"
 
-    all_modules = Rebel.Module.all_modules_for(
-      state.channel.__rebel__()[state.controller].modules)
+    all_modules =
+      Rebel.Module.all_modules_for(state.channel.__rebel__()[state.controller].modules)
 
     # transform payload via callbacks in Rebel.Module
-    Enum.reduce(all_modules, payload, fn(m, p) ->
+    Enum.reduce(all_modules, payload, fn m, p ->
       m.transform_payload(p, state)
     end)
   end
 
   defp transform_socket(payload, socket, state) do
-    all_modules = Rebel.Module.all_modules_for(
-      state.channel.__rebel__()[state.controller].modules)
+    all_modules =
+      Rebel.Module.all_modules_for(state.channel.__rebel__()[state.controller].modules)
 
     # transform socket via callbacks
-    Enum.reduce(all_modules, socket, fn(m, s) ->
+    Enum.reduce(all_modules, socket, fn m, s ->
       m.transform_socket(s, payload, state)
     end)
   end
 
   defp handle_fun(socket, fun, state) do
-    spawn_link fn ->
+    spawn_link(fn ->
       try do
         fun.()
-      rescue e ->
-        failed(socket, e)
+      rescue
+        e ->
+          failed(socket, e)
       end
-    end
+    end)
+
     {:noreply, state}
   end
 
-  defp handle_event(socket, _event_name, event_handler_function, payload, reply_to,
-                                        %Rebel{channel: channel_module} = state) do
+  defp handle_event(
+         socket,
+         _event_name,
+         event_handler_function,
+         payload,
+         reply_to,
+         %Rebel{channel: channel_module} = state
+       ) do
     # TODO: rethink the subprocess strategies - now it is just spawn_link
-    spawn_link fn ->
+    spawn_link(fn ->
       try do
         check_handler_existence!(channel_module, event_handler_function)
 
@@ -347,34 +382,39 @@ defmodule Rebel do
         controller = socket.assigns.__controller
 
         payload = transform_payload(payload, state)
-        socket  = transform_socket(payload, socket, state)
+        socket = transform_socket(payload, socket, state)
 
         channel_cfg = channel_config(channel_module, controller)
 
         # run before_handlers first
-        returns_from_befores = Enum.map(callbacks_for(event_handler, channel_cfg.before_handler),
-          fn callback_handler ->
-            apply(channel_module, callback_handler, [socket, payload])
-          end)
+        returns_from_befores =
+          Enum.map(
+            callbacks_for(event_handler, channel_cfg.before_handler),
+            fn callback_handler ->
+              apply(channel_module, callback_handler, [socket, payload])
+            end
+          )
 
         # if ANY of them fail (return false or nil), do not proceed
         unless Enum.any?(returns_from_befores, &(!&1)) do
           # run actuall event handler
           returned_from_handler = apply(channel_module, event_handler, [socket, payload])
 
-          Enum.map(callbacks_for(event_handler, channel_cfg.after_handler),
+          Enum.map(
+            callbacks_for(event_handler, channel_cfg.after_handler),
             fn callback_handler ->
               apply(channel_module, callback_handler, [socket, payload, returned_from_handler])
-            end)
+            end
+          )
         end
-
-      rescue e ->
-        failed(socket, e)
+      rescue
+        e ->
+          failed(socket, e)
       after
         # push reply to the browser, to re-enable controls
         push_reply(socket, reply_to, channel_module, event_handler_function)
       end
-    end
+    end)
 
     {:noreply, state}
   end
@@ -387,16 +427,20 @@ defmodule Rebel do
 
   defp failed(socket, e) do
     error = """
-      Rebel Handler failed with the following exception:
-      #{inspect e}
-      #{Exception.format_stacktrace(System.stacktrace())}
-      """
-    Logger.error error
+    Rebel Handler failed with the following exception:
+    #{inspect(e)}
+    #{Exception.format_stacktrace(System.stacktrace())}
+    """
+
+    Logger.error(error)
 
     if socket do
-      js = Rebel.Template.render_template(
-        "rebel.handler_error.#{Atom.to_string(env())}.js",
-        message: Rebel.Core.encode_js(error))
+      js =
+        Rebel.Template.render_template(
+          "rebel.handler_error.#{Atom.to_string(env())}.js",
+          message: Rebel.Core.encode_js(error)
+        )
+
       {:ok, _} = Rebel.Core.exec_js(socket, js)
     end
   end
@@ -415,17 +459,23 @@ defmodule Rebel do
 
   @doc false
   def callbacks_for(event_handler_function, handler_config) do
-    #:uppercase, [{:run_before_each, []}, {:run_before_uppercase, [only: [:uppercase]]}]
+    # :uppercase, [{:run_before_each, []}, {:run_before_uppercase, [only: [:uppercase]]}]
     Enum.map(handler_config, fn {callback_name, callback_filter} ->
       case callback_filter do
-        [] -> callback_name
+        [] ->
+          callback_name
+
         [only: handlers] ->
           if event_handler_function in handlers, do: callback_name, else: false
+
         [except: handlers] ->
           if event_handler_function in handlers, do: false, else: callback_name
-        _ -> false
+
+        _ ->
+          false
       end
-    end) |> Enum.filter(&(&1))
+    end)
+    |> Enum.filter(& &1)
   end
 
   defp do_push_or_broadcast(socket, pid, ref, message, payload, function) do
@@ -437,14 +487,12 @@ defmodule Rebel do
     function.(socket, message, m)
   end
 
-
   # if module is commander or controller with rebel enabled, it has __rebel/0
   # function with Rebel configuration
   defp channel_config(module, controller) do
     module.__rebel__()[controller]
   end
 
-  @env Mix.env
+  @env Mix.env()
   def env, do: @env
-
 end

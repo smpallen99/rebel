@@ -7,10 +7,11 @@ defmodule Rebel.Utils do
   Infer module name from controller module
   """
   def get_module(module, target, destination) do
-    [name | base] = module |> Module.split() |> Enum.reverse
+    [name | base] = module |> Module.split() |> Enum.reverse()
+
     [String.replace(name, target, destination) | base]
-    |> Enum.reverse
-    |> Module.concat
+    |> Enum.reverse()
+    |> Module.concat()
   end
 
   defmacro log(message) do

@@ -16,8 +16,10 @@ defmodule Rebel.ReturnChannel do
     # sender is waiting for the result
     {sender, ref} = sender(socket, sender_encrypted)
 
-    send(sender,
-      { :got_results_from_client, :ok, ref, reply })
+    send(
+      sender,
+      {:got_results_from_client, :ok, ref, reply}
+    )
 
     {:noreply, socket}
   end
@@ -27,8 +29,10 @@ defmodule Rebel.ReturnChannel do
     # sender is waiting for the result
     {sender, ref} = sender(socket, sender_encrypted)
 
-    send(sender,
-      { :got_results_from_client, :ok, ref, reply })
+    send(
+      sender,
+      {:got_results_from_client, :ok, ref, reply}
+    )
 
     {:noreply, socket}
   end
@@ -36,8 +40,10 @@ defmodule Rebel.ReturnChannel do
   def handle_in("execjs", %{"error" => [sender_encrypted, reply]}, socket) do
     {sender, ref} = sender(socket, sender_encrypted)
 
-    send(sender,
-      { :got_results_from_client, :error, ref, reply })
+    send(
+      sender,
+      {:got_results_from_client, :error, ref, reply}
+    )
 
     {:noreply, socket}
   end
@@ -45,5 +51,4 @@ defmodule Rebel.ReturnChannel do
   defp sender(socket, sender_encrypted) do
     Rebel.detokenize(socket, sender_encrypted)
   end
-
 end
