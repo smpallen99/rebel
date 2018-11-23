@@ -1,10 +1,4 @@
-<% type_val =
-  if type do
-    "type: '#{type}',"
-  else
-    nil
- end
-%>
+<% type_val = if type, do: "type: '#{type}',", else: nil %>
 swal({
   title: '<%= title %>',
   text: '<%= text %>',
@@ -12,24 +6,21 @@ swal({
   <%= for {k, v} <- opts do %>
   <%= "#{k}: #{v}" %>,
   <% end %>
-}
+})
 <%= if confirm_function do %>
-, function(isConfirm){
-  if (isConfirm) {
-    var query_output = [window.rebel_modal.sender, {
-      result: 'confirm'
+.then((result) => {
+  if (result.value) {
+    let query_output = [window.rebel_modal.sender, {
+      method: 'confirm',
+      result: result.value
     }];
     window.Rebel.return_channel.push("modal", { ok: query_output });
   } else {
-    var query_output = [window.rebel_modal.sender, {
-      result: 'cancel'
+    let query_output = [window.rebel_modal.sender, {
+      method: 'cancel',
+      result: result
     }];
     window.Rebel.return_channel.push("modal", { ok: query_output });
   }
-}
-<% else %>
-, function() {
-    swal.close();
-}
+});
 <% end %>
-);
