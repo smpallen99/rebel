@@ -161,14 +161,17 @@ defmodule Rebel.Core do
   def exec_js(socket, js, options \\ []) do
     timeout = options[:timeout] || Rebel.Config.get(:browser_response_timeout)
     reply_pid = self()
-    spawn fn ->
+
+    spawn(fn ->
       response = Rebel.push_and_wait_for_response(socket, self(), "execjs", [js: js], options)
-      send reply_pid, {:reply, response}
-    end
+      send(reply_pid, {:reply, response})
+    end)
+
     receive do
       {:reply, response} ->
         response
-      after timeout ->
+    after
+      timeout ->
         {:error, "timed out after #{timeout} ms."}
     end
   end
@@ -250,12 +253,12 @@ defmodule Rebel.Core do
   end
 
   def set_event_handlers(socket, selector) do
-    exec_js socket, ~s/Rebel.set_event_handlers('#{selector}')/
+    exec_js(socket, ~s/Rebel.set_event_handlers('#{selector}')/)
     socket
   end
 
   def set_event_handlers!(socket, selector) do
-    broadcast_js socket, ~s/Rebel.set_event_handlers('#{selector}')/
+    broadcast_js(socket, ~s/Rebel.set_event_handlers('#{selector}')/)
     socket
   end
 
@@ -276,7 +279,6 @@ defmodule Rebel.Core do
     get_store(socket, key) || default
   end
 
-
   # @doc """
   # Returns the value of the Rebel store represented by the given key.
 
@@ -295,9 +297,12 @@ defmodule Rebel.Core do
   """
   def put_store(socket, key, value) do
     store = socket |> store() |> Map.merge(%{key => value})
+
     {:ok, _} =
-      exec_js(socket,
-        "Rebel.set_rebel_store_token(\"#{tokenize_store(socket, store)}\")")
+      exec_js(
+        socket,
+        "Rebel.set_rebel_store_token(\"#{tokenize_store(socket, store)}\")"
+      )
 
     # store the store in Rebel server, to have it on terminate
     save_store(socket, store)
@@ -306,7 +311,7 @@ defmodule Rebel.Core do
   end
 
   def set_store(socket, store \\ %{}) do
-    struct socket, assigns: Map.put(socket.assigns, :__rebel_store, store)
+    struct(socket, assigns: Map.put(socket.assigns, :__rebel_store, store))
   end
 
   @doc """
@@ -386,7 +391,7 @@ defmodule Rebel.Core do
   @doc false
   def store(socket) do
     name = socket.assigns.__channel_name
-    #TODO: error {:error, "The operation is insecure."}
+    # TODO: error {:error, "The operation is insecure."}
     {:ok, store_token} = exec_js(socket, "Rebel.get_rebel_store_token('#{name}')")
     detokenize_store(socket, store_token)
   end
@@ -397,12 +402,14 @@ defmodule Rebel.Core do
     {:ok, session_token} = exec_js(socket, "Rebel.get_rebel_session_token('#{name}')")
     detokenize_store(socket, session_token)
   end
+
   @doc false
   def tokenize_store(socket, store) do
     Rebel.tokenize(socket, store, "rebel_store_token")
   end
 
-  defp detokenize_store(_socket, rebel_store_token) when rebel_store_token == nil, do: %{} # empty store
+  # empty store
+  defp detokenize_store(_socket, rebel_store_token) when rebel_store_token == nil, do: %{}
 
   defp detokenize_store(socket, rebel_store_token) do
     # we just ignore wrong token and defauklt the store to %{}
@@ -410,11 +417,11 @@ defmodule Rebel.Core do
 
     # set the token max age to 1 day by default
     max_age = Application.get_env(:rebel, :token_max_age, 86400)
-    case Phoenix.Token.verify(socket, "rebel_store_token", rebel_store_token,
-      max_age: max_age) do
 
+    case Phoenix.Token.verify(socket, "rebel_store_token", rebel_store_token, max_age: max_age) do
       {:ok, rebel_store} ->
         rebel_store
+
       {:error, _reason} ->
         %{}
     end
@@ -449,10 +456,14 @@ defmodule Rebel.Core do
   """
   def this!(sender) do
     id = sender["id"]
-    unless id, do: raise ArgumentError, """
-    Try to use Rebel.Core.this!/1 on DOM object without an ID:
-    #{inspect(sender)}
-    """
+
+    unless id,
+      do:
+        raise(ArgumentError, """
+        Try to use Rebel.Core.this!/1 on DOM object without an ID:
+        #{inspect(sender)}
+        """)
+
     "##{id}"
   end
 end

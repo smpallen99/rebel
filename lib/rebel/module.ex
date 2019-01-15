@@ -1,5 +1,5 @@
 defmodule Rebel.Module do
-  #TODO: docs
+  # TODO: docs
   @moduledoc false
 
   # Drab behaviour
@@ -7,8 +7,9 @@ defmodule Rebel.Module do
   # as well as the list of the Javascripts to render
   @callback prerequisites() :: list
   @callback js_templates() :: list
-  @callback transform_payload(payload :: list, state :: Drab.t) :: list
-  @callback transform_socket(socket :: Phoenix.Socket.t, payload :: list, state :: Rebel.t) :: list
+  @callback transform_payload(payload :: list, state :: Drab.t()) :: list
+  @callback transform_socket(socket :: Phoenix.Socket.t(), payload :: list, state :: Rebel.t()) ::
+              list
 
   defmacro __using__(_opts) do
     quote do
@@ -17,13 +18,13 @@ defmodule Rebel.Module do
       @doc false
       def prerequisites(), do: []
       @doc false
-      def js_templates(),  do: []
+      def js_templates(), do: []
       @doc false
       def transform_payload(payload, _state), do: payload
       @doc false
       def transform_socket(socket, _payload, _state), do: socket
 
-      defoverridable [prerequisites: 0, js_templates: 0, transform_payload: 2, transform_socket: 3]
+      defoverridable prerequisites: 0, js_templates: 0, transform_payload: 2, transform_socket: 3
     end
   end
 
@@ -37,7 +38,9 @@ defmodule Rebel.Module do
   def all_templates_for(modules) do
     Enum.map(all_modules_for(modules), fn mod ->
       mod.js_templates
-    end) |> List.flatten() |> Enum.uniq()
+    end)
+    |> List.flatten()
+    |> Enum.uniq()
   end
 
   defp prereqs_for(module) when is_atom(module) do
@@ -47,5 +50,4 @@ defmodule Rebel.Module do
   defp prereqs_for(modules) when is_list(modules) do
     Enum.map(modules, &prereqs_for/1)
   end
-
 end

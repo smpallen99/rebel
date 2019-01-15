@@ -5,7 +5,7 @@ defmodule Rebel.Config do
 
   @name :rebel
 
-  @app_module Mix.Project.get! |> Module.split |> hd |> Module.concat(nil)
+  @app_module Mix.Project.get!() |> Module.split() |> hd |> Module.concat(nil)
   @app_name Mix.Project.config()[:app]
 
   @doc """
@@ -25,7 +25,7 @@ defmodule Rebel.Config do
       DrabTestApp.PubSub
   """
   def pubsub() do
-    #TODO: what if the module is called differently?
+    # TODO: what if the module is called differently?
     Module.concat(app_module(), PubSub)
   end
 

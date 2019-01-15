@@ -30,7 +30,8 @@ defmodule Rebel.SweetAlert do
     ]
 
     js =
-      render_template("modal.swal.js", bindings)
+      "modal.swal.js"
+      |> render_template(bindings)
       |> String.replace("\n", "")
 
     run(socket, js, callbacks, modal?)
@@ -38,10 +39,10 @@ defmodule Rebel.SweetAlert do
 
   defp run(socket, js, callbacks, true) do
     case Rebel.push_and_wait_forever(socket, self(), "modal", js: js) do
-      {:ok, %{"result" => result} = params} = res ->
-        result = String.to_existing_atom(result)
+      {:ok, %{"method" => method} = params} = res ->
+        method = String.to_existing_atom(method)
 
-        if callback = callbacks[result] do
+        if callback = callbacks[method] do
           callback.(params)
         else
           res

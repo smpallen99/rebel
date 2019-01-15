@@ -1,5 +1,4 @@
 defmodule Rebel.Channel do
-
   defmacro __using__(options) do
     # opts = Map.merge(%Rebel.Channel.Config{}, Enum.into(options, %{}))
     # modules = Enum.map(opts.modules, fn x ->
@@ -27,22 +26,27 @@ defmodule Rebel.Channel do
       controllers =
         case unquote(options)[:controllers] do
           nil ->
-           [unquote(options)[:controller] || get_module(__MODULE__, "Channel", "Controller")]
-          controllers -> controllers
+            [unquote(options)[:controller] || get_module(__MODULE__, "Channel", "Controller")]
+
+          controllers ->
+            controllers
         end
+
       # controller = unquote(options)[:controller] || get_module(__MODULE__, "Channel", "Controller")
       view = unquote(options)[:view] || get_module(__MODULE__, "Channel", "View")
 
-      opts = for controller <- controllers, into: o do
-        {controller,
-          %Rebel.Channel.Config{controller: controller, view: view} |>
-          Map.from_struct() |> Map.merge(o)}
+      opts =
+        for controller <- controllers, into: o do
+          {controller,
+           %Rebel.Channel.Config{controller: controller, view: view}
+           |> Map.from_struct()
+           |> Map.merge(o)}
         end
 
       @options Map.put(opts, :access_session, [])
 
       if intercepts do
-        intercept intercepts
+        intercept(intercepts)
       end
 
       # unquote
@@ -95,10 +99,13 @@ defmodule Rebel.Channel do
       end
 
       def topic(broadcasting, controller, request_path, conn_assigns)
+
       def topic(:same_path, _, path, _conn_assigns),
         do: Rebel.Core.same_path(path)
+
       def topic(:same_controller, controller, _, _),
         do: Rebel.Core.same_controller(controller)
+
       def topic(topic, _, _, _) when is_binary(topic),
         do: Rebel.Core.same_topic(topic)
 
@@ -106,13 +113,13 @@ defmodule Rebel.Channel do
         # Logger.warn "event: #{inspect event}"
         # Logger.warn "payload: #{inspect payload}"
         # Logger.warn "assigns: #{inspect socket.assigns}"
-        [_ | broadcast_topic] = String.split event, ":"
+        [_ | broadcast_topic] = String.split(event, ":")
         # socket already contains controller and action
         socket_with_topic =
           socket
           |> assign(:__broadcast_topic, broadcast_topic)
           |> assign(:__channel_name, __MODULE__.name())
-          |> Rebel.Core.set_store
+          |> Rebel.Core.set_store()
 
         {:ok, pid} = Rebel.start_link(socket_with_topic)
 
@@ -123,19 +130,19 @@ defmodule Rebel.Channel do
         {:ok, socket_with_pid}
       end
 
-      defoverridable [join: 3, topic: 4]
+      defoverridable join: 3, topic: 4
 
       def handle_info({:rebel_return_assigns, assigns}, socket) do
         {:noreply, struct(socket, assigns: assigns)}
       end
 
       def handle_in("onload", _, socket) do
-        verify_and_cast :onload, [], socket
+        verify_and_cast(:onload, [], socket)
       end
 
       def handle_in("onconnect", payload, socket) do
-        Rebel.set_socket socket.assigns.__rebel_pid, socket
-        verify_and_cast :onconnect, [payload["payload"]], socket
+        Rebel.set_socket(socket.assigns.__rebel_pid, socket)
+        verify_and_cast(:onconnect, [payload["payload"]], socket)
       end
 
       def handle_in("execjs", %{"ok" => [sender_encrypted, reply]}, socket) do
@@ -145,8 +152,10 @@ defmodule Rebel.Channel do
         # Logger.info ".... reply: #{inspect reply}"
         {sender, ref} = sender(socket, sender_encrypted)
         # Logger.info "{sender, ref}: #{inspect {sender, ref}}"
-        send(sender,
-          { :got_results_from_client, :ok, ref, reply })
+        send(
+          sender,
+          {:got_results_from_client, :ok, ref, reply}
+        )
 
         {:noreply, socket}
       end
@@ -158,30 +167,38 @@ defmodule Rebel.Channel do
         # Logger.info ".... reply: #{inspect reply}"
         {sender, ref} = sender(socket, sender_encrypted)
         # Logger.info "{sender, ref}: #{inspect {sender, ref}}"
-        send(sender,
-          { :got_results_from_client, :ok, ref, reply })
+        send(
+          sender,
+          {:got_results_from_client, :ok, ref, reply}
+        )
 
         {:noreply, socket}
       end
 
       def handle_in("execjs", %{"error" => [sender_encrypted, reply]}, socket) do
         {sender, ref} = sender(socket, sender_encrypted)
-        send(sender,
-          { :got_results_from_client, :error, ref, reply })
+
+        send(
+          sender,
+          {:got_results_from_client, :error, ref, reply}
+        )
 
         {:noreply, socket}
       end
 
-      def handle_in("event", %{
-          "event" => event_name,
-          "payload" => payload,
-          "event_handler_function" => event_handler_function,
-          "reply_to" => reply_to
-          }, socket) do
+      def handle_in(
+            "event",
+            %{
+              "event" => event_name,
+              "payload" => payload,
+              "event_handler_function" => event_handler_function,
+              "reply_to" => reply_to
+            },
+            socket
+          ) do
         # event name is currently not used (0.2.0)
         verify_and_cast(event_name, [payload, event_handler_function, reply_to], socket)
       end
-
     end
   end
 
@@ -203,15 +220,19 @@ defmodule Rebel.Channel do
     """
     defmacro unquote(macro_name)(event_handler) when is_atom(event_handler) do
       m = unquote(macro_name)
+
       quote bind_quoted: [m: m], unquote: true do
-        Map.get(@options, m) && raise CompileError, description: "Only one `#{inspect m}` definition is allowed"
+        Map.get(@options, m) &&
+          raise CompileError, description: "Only one `#{inspect(m)}` definition is allowed"
+
         @options Map.put(@options, m, unquote(event_handler))
       end
     end
 
     defmacro unquote(macro_name)(unknown_argument) do
-      raise CompileError, description: """
-        Only atom is allowed in `#{unquote(macro_name)}`. Given: #{inspect unknown_argument}
+      raise CompileError,
+        description: """
+        Only atom is allowed in `#{unquote(macro_name)}`. Given: #{inspect(unknown_argument)}
         """
     end
   end)
@@ -251,9 +272,9 @@ defmodule Rebel.Channel do
   end
 
   defmacro access_session(unknown_argument) do
-    raise CompileError, description: """
-      Only atom or list are allowed in `access_session`. Given: #{inspect unknown_argument}
+    raise CompileError,
+      description: """
+      Only atom or list are allowed in `access_session`. Given: #{inspect(unknown_argument)}
       """
   end
-
 end

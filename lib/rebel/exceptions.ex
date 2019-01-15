@@ -4,4 +4,3 @@ defmodule Rebel.JSExecutionError do
   """
   defexception message: nil
 end
-

@@ -46,24 +46,27 @@ defmodule Rebel.Client do
 
       # Logger.warn "{conn_opts, assigns} " <> inspect({conn_opts, assigns})
       controller_and_action =
-        Phoenix.Token.sign(conn, "controller_and_action",
-        [__controller: controller,
-        __action: Phoenix.Controller.action_name(conn),
-        __assigns: assigns])
+        Phoenix.Token.sign(
+          conn,
+          "controller_and_action",
+          __controller: controller,
+          __action: Phoenix.Controller.action_name(conn),
+          __assigns: assigns
+        )
 
       channels =
         for channel <- rebel.channels do
           ch_rebel = channel.__rebel__()
-          if chan_rebel = ch_rebel[controller] do
 
+          if chan_rebel = ch_rebel[controller] do
             session =
-              for key <- ch_rebel.access_session, into: %{},
-                do: {key, Plug.Conn.get_session(conn, key)}
+              for key <- ch_rebel.access_session,
+                  into: %{},
+                  do: {key, Plug.Conn.get_session(conn, key)}
 
             session_token = Rebel.Core.tokenize_store(conn, session)
 
-            broadcast_topic = topic(conn, channel, chan_rebel.broadcasting,
-              controller)
+            broadcast_topic = topic(conn, channel, chan_rebel.broadcasting, controller)
             {chan_rebel.name, broadcast_topic, session_token}
           else
             nil
@@ -81,27 +84,27 @@ defmodule Rebel.Client do
 
       bindings = [
         controller_and_action: controller_and_action,
-        templates:             templates,
-        channels:              channels,
-        rebel_session_token:   "",
-        default_channel:       rebel.default_channel,
-        conn_opts:             "{" <> conn_opts <>"}",
-        broadcast_topic:       "same_controller"
+        templates: templates,
+        channels: channels,
+        rebel_session_token: "",
+        default_channel: rebel.default_channel,
+        conn_opts: "{" <> conn_opts <> "}",
+        broadcast_topic: "same_controller"
       ]
 
       js = render_template("rebel.js", bindings)
 
-      Phoenix.HTML.raw """
+      Phoenix.HTML.raw("""
       <script>
         #{js}
       </script>
-      """
+      """)
     else
       ""
     end
   end
 
   defp topic(conn, channel, broadcasting, controller) do
-    channel.topic broadcasting, controller, conn.request_path, conn.assigns
+    channel.topic(broadcasting, controller, conn.request_path, conn.assigns)
   end
 end

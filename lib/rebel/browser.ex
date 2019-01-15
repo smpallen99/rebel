@@ -9,7 +9,6 @@ defmodule Rebel.Browser do
   require Logger
   require Rebel.Utils, as: Utils
 
-
   @doc """
   Returns local browser time as NaiveDateTime. Timezone information is not included.
 
@@ -32,16 +31,20 @@ defmodule Rebel.Browser do
     }
     retval
     """
+
     {:ok, browser_now} = exec_js(socket, js)
-    {:ok, now} = NaiveDateTime.new(
-      browser_now["year"],
-      browser_now["month"],
-      browser_now["day"],
-      browser_now["hour"],
-      browser_now["minute"],
-      browser_now["second"],
-      browser_now["millisecond"] * 1000
+
+    {:ok, now} =
+      NaiveDateTime.new(
+        browser_now["year"],
+        browser_now["month"],
+        browser_now["day"],
+        browser_now["hour"],
+        browser_now["minute"],
+        browser_now["second"],
+        browser_now["millisecond"] * 1000
       )
+
     now
   end
 
@@ -55,7 +58,9 @@ defmodule Rebel.Browser do
   """
   def utc_offset(socket) do
     case exec_js(socket, "new Date().getTimezoneOffset()") do
-      {:ok, offset} -> -60 * offset
+      {:ok, offset} ->
+        -60 * offset
+
       {:error, error} ->
         Utils.log(error)
         0
@@ -68,7 +73,6 @@ defmodule Rebel.Browser do
   #   now
   # end
 
-
   @doc """
   Returns browser information (userAgent).
 
@@ -79,7 +83,9 @@ defmodule Rebel.Browser do
   """
   def user_agent(socket) do
     case exec_js(socket, "navigator.userAgent") do
-      {:ok, agent} -> agent
+      {:ok, agent} ->
+        agent
+
       {:error, error} ->
         Utils.log(error)
         ""
@@ -96,7 +102,9 @@ defmodule Rebel.Browser do
   """
   def language(socket) do
     case exec_js(socket, "navigator.language") do
-      {:ok, lang} -> lang
+      {:ok, lang} ->
+        lang
+
       {:error, error} ->
         Utils.log(error)
         "en"
@@ -113,7 +121,9 @@ defmodule Rebel.Browser do
   """
   def languages(socket) do
     case exec_js(socket, "navigator.languages") do
-      {:ok, langs} -> langs
+      {:ok, langs} ->
+        langs
+
       {:error, error} ->
         Utils.log(error)
         ""
@@ -128,7 +138,9 @@ defmodule Rebel.Browser do
   """
   def redirect_to(socket, url) do
     case exec_js(socket, "window.location = '#{url}'") do
-      {:ok, _} -> :ok
+      {:ok, _} ->
+        :ok
+
       {:error, error} ->
         Utils.log(error)
         :ok
@@ -161,7 +173,6 @@ defmodule Rebel.Browser do
   end
 
   defp do_console(socket, log, push_or_broadcast_function) do
-    push_or_broadcast_function.(socket, self(), nil, "console",  log: log)
+    push_or_broadcast_function.(socket, self(), nil, "console", log: log)
   end
-
 end

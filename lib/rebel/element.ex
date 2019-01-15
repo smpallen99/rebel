@@ -13,13 +13,13 @@ defmodule Rebel.Element do
   use Rebel.Module
 
   @doc false
-  def js_templates(),  do: ["rebel.element.js"]
+  def js_templates(), do: ["rebel.element.js"]
 
   @doc false
   def transform_payload(payload, _state) do
     payload
-      |> Map.put_new("value", payload["val"])
-      |> Map.put_new(:params, payload["form"])
+    |> Map.put_new("value", payload["val"])
+    |> Map.put_new(:params, payload["form"])
   end
 
   @doc """
@@ -76,6 +76,7 @@ defmodule Rebel.Element do
 
   """
   def query(socket, selector, property_or_properties_list)
+
   def query(socket, selector, property) when is_binary(property) or is_atom(property) do
     query(socket, selector, [property])
   end
@@ -91,11 +92,11 @@ defmodule Rebel.Element do
     query!(socket, selector, [])
   end
 
-
   @doc """
   Like `query/3`, but raises instead of returning `{:error, reason}`.
   """
   def query!(socket, selector, property_or_properties_list)
+
   def query!(socket, selector, property) when is_binary(property) or is_atom(property) do
     query!(socket, selector, [property])
   end
@@ -135,10 +136,11 @@ defmodule Rebel.Element do
     case query(socket, selector, property_or_properties_list) do
       {:ok, map} ->
         case Map.keys(map) do
-          []    -> {:ok, nil}
+          [] -> {:ok, nil}
           [key] -> {:ok, map[key]}
-          _     -> {:too_many, query_one_error_message(map, selector)}
+          _ -> {:too_many, query_one_error_message(map, selector)}
         end
+
       other ->
         other
     end
@@ -156,10 +158,11 @@ defmodule Rebel.Element do
   """
   def query_one!(socket, selector, property_or_properties_list) do
     map = query!(socket, selector, property_or_properties_list)
+
     case Map.keys(map) do
-      []    -> nil
+      [] -> nil
       [key] -> map[key]
-      _     -> raise query_one_error_message(map, selector)
+      _ -> raise query_one_error_message(map, selector)
     end
   end
 
@@ -221,7 +224,8 @@ defmodule Rebel.Element do
 
   See `Rebel.Core.broadcast_js/2` for broadcasting options.
   """
-  def broadcast_prop(subject, selector, properties) when is_map(properties) or is_list(properties) do
+  def broadcast_prop(subject, selector, properties)
+      when is_map(properties) or is_list(properties) do
     broadcast_js(subject, set_js(selector, Map.new(properties)))
   end
 
@@ -240,14 +244,14 @@ defmodule Rebel.Element do
 
   """
   def set_style(socket, selector, properties) when is_list(properties) or is_map(properties) do
-    set_prop socket, selector, %{"style" => Map.new(properties)}
+    set_prop(socket, selector, %{"style" => Map.new(properties)})
   end
 
   @doc """
   Bang version of `set_style/3`. Raises exception on error.
   """
   def set_style!(socket, selector, properties) when is_list(properties) or is_map(properties) do
-    set_prop! socket, selector, %{"style" => Map.new(properties)}
+    set_prop!(socket, selector, %{"style" => Map.new(properties)})
   end
 
   @doc """
@@ -261,14 +265,14 @@ defmodule Rebel.Element do
       {:ok, 1}
   """
   def set_attr(socket, selector, attributes) when is_list(attributes) or is_map(attributes) do
-    set_prop socket, selector, %{"attributes" => Map.new(attributes)}
+    set_prop(socket, selector, %{"attributes" => Map.new(attributes)})
   end
 
   @doc """
   Bang version of `set_attr/3`. Raises exception on error.
   """
   def set_attr!(socket, selector, attributes) when is_list(attributes) or is_map(attributes) do
-    set_prop! socket, selector, %{"attributes" => Map.new(attributes)}
+    set_prop!(socket, selector, %{"attributes" => Map.new(attributes)})
   end
 
   @doc """
@@ -282,14 +286,14 @@ defmodule Rebel.Element do
       {:ok, 1}
   """
   def set_data(socket, selector, dataset) when is_list(dataset) or is_map(dataset) do
-    set_prop socket, selector, %{"dataset" => Map.new(dataset)}
+    set_prop(socket, selector, %{"dataset" => Map.new(dataset)})
   end
 
   @doc """
   Bang version of `set_data/3`. Raises exception on error.
   """
   def set_data!(socket, selector, dataset) when is_list(dataset) or is_map(dataset) do
-    set_prop! socket, selector, %{"dataset" => Map.new(dataset)}
+    set_prop!(socket, selector, %{"dataset" => Map.new(dataset)})
   end
 
   @doc """
@@ -340,5 +344,4 @@ defmodule Rebel.Element do
   defp insert_js(selector, position, html) do
     "Rebel.insert_html(#{encode_js(selector)}, #{encode_js(position)}, #{encode_js(html)})"
   end
-
 end
