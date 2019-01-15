@@ -12,24 +12,25 @@ swal({
   <%= for {k, v} <- opts do %>
   <%= "#{k}: #{v}" %>,
   <% end %>
-}
+})
 <%= if confirm_function do %>
-, function(isConfirm){
-  if (isConfirm) {
-    var query_output = [window.rebel_modal.sender, {
-      result: 'confirm'
-    }];
-    window.Rebel.return_channel.push("modal", { ok: query_output });
+.then((data) => {
+  let query_output = {};
+  if (data.value) {
+    let result = data.value;
+    result.result = 'confirm';
+    query_output = [window.rebel_modal.sender, result];
   } else {
-    var query_output = [window.rebel_modal.sender, {
+    console.log('isConfirm false');
+    query_output = [window.rebel_modal.sender, {
       result: 'cancel'
     }];
-    window.Rebel.return_channel.push("modal", { ok: query_output });
   }
-}
+  window.Rebel.return_channel.push("modal", { ok: query_output });
+});
 <% else %>
-, function() {
+.then(() => {
+    console.log('no confirm function');
     swal.close();
-}
+});
 <% end %>
-);
