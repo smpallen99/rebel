@@ -392,15 +392,34 @@ defmodule Rebel.Core do
   def store(socket) do
     name = socket.assigns.__channel_name
     # TODO: error {:error, "The operation is insecure."}
-    {:ok, store_token} = exec_js(socket, "Rebel.get_rebel_store_token('#{name}')")
-    detokenize_store(socket, store_token)
+    case exec_js(socket, "Rebel.get_rebel_store_token('#{name}')") do
+      {:ok, store_token} ->
+        detokenize_store(socket, store_token)
+
+      error ->
+        if Application.get_env(:rebel, :logger) do
+          Logger.warn("failed to get store name: #{inspect(name)}, error: #{inspect(error)}")
+        end
+
+        error
+    end
   end
 
   @doc false
   def session(socket) do
     name = socket.assigns.__channel_name
-    {:ok, session_token} = exec_js(socket, "Rebel.get_rebel_session_token('#{name}')")
-    detokenize_store(socket, session_token)
+
+    case exec_js(socket, "Rebel.get_rebel_session_token('#{name}')") do
+      {:ok, session_token} ->
+        detokenize_store(socket, session_token)
+
+      error ->
+        if Application.get_env(:rebel, :logger) do
+          Logger.warn("failed to get session name: #{inspect(name)}, error: #{inspect(error)}")
+        end
+
+        error
+    end
   end
 
   @doc false
