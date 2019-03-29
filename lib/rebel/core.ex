@@ -338,11 +338,11 @@ defmodule Rebel.Core do
   def same_topic(topic), do: "topic:#{topic}"
 
   @doc false
-  def encode_js(value), do: Poison.encode!(value)
+  def encode_js(value), do: Jason.encode!(value)
 
   @doc false
   def decode_js(value) do
-    case Poison.decode(value) do
+    case Jason.decode(value) do
       {:ok, v} -> v
       _ -> value
     end

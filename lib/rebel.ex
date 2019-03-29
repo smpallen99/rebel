@@ -319,7 +319,8 @@ defmodule Rebel do
           apply(channel, callback, [socket])
         rescue
           e ->
-            failed(socket, e)
+            stacktrace = Exception.format_stacktrace(System.stacktrace())
+            failed(socket, e, stacktrace)
         end
       end)
     end
@@ -356,7 +357,8 @@ defmodule Rebel do
         fun.()
       rescue
         e ->
-          failed(socket, e)
+          stacktrace = Exception.format_stacktrace(System.stacktrace())
+          failed(socket, e, stacktrace)
       end
     end)
 
@@ -409,7 +411,8 @@ defmodule Rebel do
         end
       rescue
         e ->
-          failed(socket, e)
+          stacktrace = Exception.format_stacktrace(System.stacktrace())
+          failed(socket, e, stacktrace)
       after
         # push reply to the browser, to re-enable controls
         push_reply(socket, reply_to, channel_module, event_handler_function)
@@ -425,11 +428,11 @@ defmodule Rebel do
     end
   end
 
-  defp failed(socket, e) do
+  defp failed(socket, e, stacktrace \\ "") do
     error = """
     Rebel Handler failed with the following exception:
     #{inspect(e)}
-    #{Exception.format_stacktrace(System.stacktrace())}
+    #{stacktrace}
     """
 
     Logger.error(error)

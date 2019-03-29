@@ -4,7 +4,7 @@ defmodule Rebel.Mixfile do
   def project do
     [
       app: :rebel,
-      version: "0.1.5",
+      version: "0.1.6",
       elixir: "~> 1.4",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -41,7 +41,8 @@ defmodule Rebel.Mixfile do
       {:phoenix_live_reload, "~> 1.0", only: :dev},
       {:poison, "~> 3.1", override: true},
       {:cowboy, "~> 1.0", only: :test},
-      {:ex_doc, "~> 0.0", only: :dev}
+      {:ex_doc, "~> 0.0", only: :dev},
+      {:jason, "~> 1.1"}
     ]
   end
 end
