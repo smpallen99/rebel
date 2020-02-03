@@ -17,7 +17,7 @@
 
   window.Rebel = {
     run: function(return_token, session_token, broadcast_topic) {
-      console.log('run', return_token, session_token)
+      console.debug('run', return_token, session_token)
       this.Socket = require("phoenix").Socket
 
       this.return_token = return_token
@@ -50,7 +50,7 @@
       this.return_channel = this.socket.channel("return:" + this.rebel_topic, {});
 
       this.return_channel.join().receive("error", function(resp) {
-        console.log("Unable to join the Rebel Channel", resp);
+        console.warn("Unable to join the Rebel Channel", resp);
       }).receive("ok", function(resp) {
         rebel.return_channel.on("event", function(message) {
           if (messaage.finished && rebel.event_reply_table[message.finished]) {
@@ -71,9 +71,15 @@
       this.channels = {}
     },
     run_channel: function(channel_name, session_token, broadcast_topic) {
-      console.log('run_channel', channel_name, broadcast_topic, session_token)
+      console.debug('run_channel', channel_name, broadcast_topic, session_token)
       let rebel = window.Rebel
       let channel = {topic: broadcast_topic}
+
+      if (this.channels[channel_name] && this.channels[channel_name].channel) {
+        console.debug('existing channel remove bindings', channel_name, broadcast_topic, session_token)
+        this.channels[channel_name].channel.bindings = []
+      }
+
       let chan = this.socket.channel(channel_name + ":" + broadcast_topic, <%= conn_opts %>)
 
       channel.rebel_session_token = session_token
@@ -89,7 +95,7 @@
           console.error("Unable to join the Rebel Channel", channel_name, resp)
         })
         .receive("ok", (resp) => {
-          console.log('received ok for join on channel', channel_name)
+          console.debug('received ok for join on channel', channel_name)
           rebel.connected.forEach((fx) => {
             fx(resp, channel_name, rebel)
           })
@@ -107,7 +113,7 @@
       this.channels[channel_name] = channel
     },
     run_handler(channel_name, event_name, event_handler, payload, execute_after) {
-      console.log('run_hander', channel_name)
+      console.debug('run_hander', channel_name)
       var reply_to = uuid()
       if(execute_after) {
         Rebel.event_reply_table[reply_to] = execute_after
@@ -151,11 +157,11 @@
       Rebel.Template.render_template(template, [])
     end)
   %>
-  console.log('about to run')
+  console.debug('about to run')
 
   Rebel.run('<%= controller_and_action %>', '<%= rebel_session_token %>', '<%= broadcast_topic %>')
 
-  console.log('about to run channels')
+  console.debug('about to run channels')
 
   <%= Enum.map channels, fn {channel_name, broadcast_topic, session_token} -> %>
     Rebel.run_channel('<%= channel_name %>', '<%= session_token %>', '<%= broadcast_topic %>')
