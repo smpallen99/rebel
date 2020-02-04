@@ -4,7 +4,7 @@ defmodule Rebel.Mixfile do
   def project do
     [
       app: :rebel,
-      version: "0.1.8",
+      version: "0.2.0",
       elixir: "~> 1.4",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,

@@ -45,6 +45,11 @@
         {params: Object.assign({__rebel_return: return_token},
           <%= conn_opts %>)})
 
+      this.socket.onError(error => {
+        const event = new Event('SocketError')
+        document.querySelector('body').dispatchEvent(event)
+      })
+
       this.socket.connect()
 
       this.return_channel = this.socket.channel("return:" + this.rebel_topic, {});
