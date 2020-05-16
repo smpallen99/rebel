@@ -18,7 +18,7 @@
   window.Rebel = {
     run: function(return_token, session_token, broadcast_topic) {
       console.debug('run', return_token, session_token)
-      this.Socket = require("phoenix").Socket
+      this.Socket = window.Socket
 
       this.return_token = return_token
       this.session_token = session_token
