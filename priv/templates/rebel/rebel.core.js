@@ -37,7 +37,13 @@ Rebel.on_connect(function(resp, channel_name, rebel) {
 
     // broadcast does not return a meesage
     channel.on("broadcastjs", function(message) {
-      eval(message.js)
+      try {
+        eval(message.js)
+      }
+      catch(e) {
+        window.rebelBroadcastError = message.js
+        console.error("broadcastjs exception. message.js saved in window.rebelBroadcastError", e)
+      }
     })
 
     // console.log
