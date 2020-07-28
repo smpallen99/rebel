@@ -64,6 +64,10 @@ function default_payload(sender, event) {
           }
         } else if (input.type == "checkbox") {
           params[key] = input.checked.toString();
+        } else if (input.type == "select-multiple") {
+          params[key] = [...input.options]
+            .filter(option => option.selected)
+            .map(option => option.value).join(",");
         } else {
           params[key] = input.value;
         }
