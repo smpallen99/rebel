@@ -54,26 +54,6 @@ defmodule Rebel.Client do
           __assigns: assigns
         )
 
-      channels =
-        for channel <- rebel.channels do
-          ch_rebel = channel.__rebel__()
-
-          if chan_rebel = ch_rebel[controller] do
-            session =
-              for key <- ch_rebel.access_session,
-                  into: %{},
-                  do: {key, Plug.Conn.get_session(conn, key)}
-
-            session_token = Rebel.Core.tokenize_store(conn, session)
-
-            broadcast_topic = topic(conn, channel, chan_rebel.broadcasting, controller)
-            {chan_rebel.name, broadcast_topic, session_token}
-          else
-            nil
-          end
-        end
-        |> Enum.reject(&is_nil/1)
-
       templates = ~w(rebel.core.js rebel.element.js rebel.events.js)
 
       conn_opts =
@@ -85,7 +65,7 @@ defmodule Rebel.Client do
       bindings = [
         controller_and_action: controller_and_action,
         templates: templates,
-        channels: channels,
+        channels: process_channels(conn, rebel, controller),
         rebel_session_token: "",
         default_channel: rebel.default_channel,
         conn_opts: "{" <> conn_opts <> "}",
@@ -101,6 +81,36 @@ defmodule Rebel.Client do
       """)
     else
       ""
+    end
+  end
+
+  defp process_channels(conn, rebel, controller) do
+    for channel <- rebel.channels, reduce: [] do
+      acc ->
+        ch_rebel = channel.__rebel__()
+
+        with %{} = chan_rebel <- ch_rebel[controller],
+            true <- should_join?(conn, chan_rebel) do
+          session =
+            for key <- ch_rebel.access_session,
+                into: %{},
+                do: {key, Plug.Conn.get_session(conn, key)}
+
+          session_token = Rebel.Core.tokenize_store(conn, session)
+
+          broadcast_topic = topic(conn, channel, chan_rebel.broadcasting, controller)
+          [{chan_rebel.name, broadcast_topic, session_token} | acc]
+        else
+          _ -> acc
+        end
+    end
+  end
+
+  defp should_join?(conn, %{channel: channel}) do
+    if function_exported?(channel, :should_join?, 1) do
+      channel.should_join?(conn)
+    else
+      true
     end
   end
 

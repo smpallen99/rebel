@@ -64,7 +64,7 @@ defmodule Rebel.Channel do
       end
 
       # @doc """
-      # A shordhand for `Phoenix.View.render_to_string/3. Injects the corresponding view.
+      # A shorthand for `Phoenix.View.render_to_string/3`. Injects the corresponding view.
       # """
       # def render_to_string(template, assigns) do
       #   view = __MODULE__.__rebel__().view
@@ -72,7 +72,7 @@ defmodule Rebel.Channel do
       # end
 
       @doc """
-      A shordhand for `Phoenix.View.render_to_string/3.
+      A shorthand for `Phoenix.View.render_to_string/3`.
       """
       def render_to_string(view, template, assigns) do
         Phoenix.View.render_to_string(view, template, assigns)
