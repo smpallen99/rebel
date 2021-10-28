@@ -32,15 +32,6 @@
 
       var rebel = this
 
-      // rebel.load.forEach((fx) => {
-      //   fx(rebel)
-      // })
-
-      for (var i = 0; i < rebel.load.length; i++) {
-        var fx = rebel.load[i];
-        fx(rebel);
-      }
-
       this.socket = new this.Socket("<%= Rebel.Config.get(:socket) %>",
         {params: Object.assign({__rebel_return: return_token},
           <%= conn_opts %>)})
@@ -54,19 +45,22 @@
 
       this.return_channel = this.socket.channel("return:" + this.rebel_topic, {});
 
-      this.return_channel.join().receive("error", function(resp) {
-        console.warn("Unable to join the Rebel Channel", resp);
-      }).receive("ok", function(resp) {
-        rebel.return_channel.on("event", function(message) {
-          if (messaage.finished && rebel.event_reply_table[message.finished]) {
-            rebel.event_reply_table[message.finished]();
-            delete rebel.event_reply_table[message.finished];
-          }
+      this.return_channel.on("event", message => {
+        if (messaage.finished && rebel.event_reply_table[message.finished]) {
+          rebel.event_reply_table[message.finished]();
+          delete rebel.event_reply_table[message.finished];
+        }
+      })
+
+      this.return_channel.join()
+        .receive("error", function(resp) {
+          console.warn("Unable to join the Rebel Channel", resp);
+        })
+        .receive("ok", function(resp) {
+          console.debug("return channel joined")
         });
-      });
 
       this.socket.onClose(function(event) {
-
         for (var di = 0; di < rebel.disconnected.length; di++) {
           var fxd = rebel.disconnected[di];
         // rebel.disconnected.forEach(function(fx) {
@@ -88,10 +82,21 @@
       let chan = this.socket.channel(channel_name + ":" + broadcast_topic, <%= conn_opts %>)
 
       channel.rebel_session_token = session_token
+      channel.channel = chan
+      this.channels[channel_name] = channel
 
       // launch all on_load functions
       rebel.load.forEach((fx) => {
         fx(channel_name, rebel)
+      })
+
+      // event is sent after Rebel finish processing the event
+      chan.on("event", (message) => {
+        // console.log("EVENT: ", message)
+        if(message.finished && rebel.event_reply_table[message.finished]) {
+          rebel.event_reply_table[message.finished]()
+          delete rebel.event_reply_table[message.finished]
+        }
       })
 
       chan.join()
@@ -105,17 +110,7 @@
             fx(resp, channel_name, rebel)
           })
           channel.already_connected = true
-          // event is sent after Rebel finish processing the event
-          chan.on("event", (message) => {
-            // console.log("EVENT: ", message)
-            if(message.finished && rebel.event_reply_table[message.finished]) {
-              rebel.event_reply_table[message.finished]()
-              delete rebel.event_reply_table[message.finished]
-            }
-          })
         })
-      channel.channel = chan
-      this.channels[channel_name] = channel
     },
     run_handler(channel_name, event_name, event_handler, payload, execute_after) {
       console.debug('run_hander', channel_name)
