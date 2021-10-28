@@ -1,5 +1,5 @@
 console.log('rebel.core init')
-Rebel.on_connect(function(resp, channel_name, rebel) {
+Rebel.on_load(function(channel_name, rebel) {
   let channel = rebel.channels[channel_name].channel
   // prevent reassigning messages
   if (!rebel.already_connected) {
@@ -51,8 +51,12 @@ Rebel.on_connect(function(resp, channel_name, rebel) {
       console.log(message.log)
     })
   }
+})
 
+Rebel.on_connect(function(resp, channel_name, rebel) {
   // launch server-side onconnect callback - every time it is connected
+  let channel = rebel.channels[channel_name].channel
+
   channel.push("onconnect", {
     store_token: Rebel.store_token,
     payload: payload()
