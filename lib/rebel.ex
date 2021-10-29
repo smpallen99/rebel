@@ -193,14 +193,21 @@ defmodule Rebel do
     {:noreply, state}
   end
 
-  @doc false
   def handle_info({:EXIT, pid, :killed}, state) when pid != self() do
     failed(state.socket, %RuntimeError{message: "Rebel Process #{inspect(pid)} has been killed."})
     {:noreply, state}
   end
 
-  @doc false
-  def handle_info({:EXIT, pid, {reason, stack}}, state) when pid != self() do
+  def handle_info({:EXIT, pid, {:noproc, process_info}}, state) when pid != self() do
+    # called process not running or responding
+    Logger.error(
+      "Rebel Process #{inspect(pid)} died because a called process failed #{inspect(process_info)}"
+    )
+
+    {:noreply, state}
+  end
+
+  def handle_info({:EXIT, pid, {reason, stack}}, state) when pid != self() and is_list(stack) do
     # subprocess died
     Logger.error("""
     Rebel Process #{inspect(pid)} died because of #{inspect(reason)}

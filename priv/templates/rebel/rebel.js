@@ -46,7 +46,7 @@
       this.return_channel = this.socket.channel("return:" + this.rebel_topic, {});
 
       this.return_channel.on("event", message => {
-        if (messaage.finished && rebel.event_reply_table[message.finished]) {
+        if (message.finished && rebel.event_reply_table[message.finished]) {
           rebel.event_reply_table[message.finished]();
           delete rebel.event_reply_table[message.finished];
         }
