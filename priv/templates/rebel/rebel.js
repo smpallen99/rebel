@@ -113,7 +113,7 @@
         })
     },
     run_handler(channel_name, event_name, event_handler, payload, execute_after) {
-      console.debug('run_hander', channel_name)
+      console.debug('run_handler', channel_name)
       var reply_to = uuid()
       if(execute_after) {
         Rebel.event_reply_table[reply_to] = execute_after

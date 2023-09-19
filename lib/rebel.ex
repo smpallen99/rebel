@@ -180,8 +180,8 @@ defmodule Rebel do
   # Callbacks
 
   def init(state) do
-    # Logger.warn "Rebel.init state: #{inspect state}"
-    # Logger.warn "+++++ Rebel pid: #{inspect self()}"
+    # Logger.warning "Rebel.init state: #{inspect state}"
+    # Logger.warning "+++++ Rebel pid: #{inspect self()}"
     Process.flag(:trap_exit, true)
     {:ok, state}
   end
@@ -326,7 +326,7 @@ defmodule Rebel do
           apply(channel, callback, [socket])
         rescue
           e ->
-            stacktrace = Exception.format_stacktrace(System.stacktrace())
+            stacktrace = Exception.format_stacktrace(__STACKTRACE__)
             failed(socket, e, stacktrace)
         end
       end)
@@ -364,7 +364,7 @@ defmodule Rebel do
         fun.()
       rescue
         e ->
-          stacktrace = Exception.format_stacktrace(System.stacktrace())
+          stacktrace = Exception.format_stacktrace(__STACKTRACE__)
           failed(socket, e, stacktrace)
       end
     end)
@@ -418,7 +418,7 @@ defmodule Rebel do
         end
       rescue
         e ->
-          stacktrace = Exception.format_stacktrace(System.stacktrace())
+          stacktrace = Exception.format_stacktrace(__STACKTRACE__)
           failed(socket, e, stacktrace)
       after
         # push reply to the browser, to re-enable controls
@@ -490,9 +490,9 @@ defmodule Rebel do
 
   defp do_push_or_broadcast(socket, pid, ref, message, payload, function) do
     token = tokenize(socket, {pid, ref})
-    # Logger.warn "{pid,ref} token " <> inspect({pid, ref}) <> " : " <> inspect(token)
-    # Logger.warn "message: #{inspect message}"
-    # Logger.warn "payload: #{inspect payload}"
+    # Logger.warning "{pid,ref} token " <> inspect({pid, ref}) <> " : " <> inspect(token)
+    # Logger.warning "message: #{inspect message}"
+    # Logger.warning "payload: #{inspect payload}"
     m = payload |> Enum.into(%{}) |> Map.merge(%{sender: token})
     function.(socket, message, m)
   end

@@ -4,7 +4,7 @@ defmodule Rebel.Mixfile do
   def project do
     [
       app: :rebel,
-      version: "0.3.2",
+      version: "0.3.3",
       elixir: "~> 1.12",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -35,7 +35,7 @@ defmodule Rebel.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:phoenix, "~> 1.5"},
+      {:phoenix, "~> 1.5.9"},
       {:phoenix_html, "~> 3.0"},
       {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_live_reload, "~> 1.3", only: :dev},

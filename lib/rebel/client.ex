@@ -44,7 +44,7 @@ defmodule Rebel.Client do
         [{:__controller, controller} | assigns]
         |> Keyword.pop(:conn_opts, [])
 
-      # Logger.warn "{conn_opts, assigns} " <> inspect({conn_opts, assigns})
+      # Logger.warning "{conn_opts, assigns} " <> inspect({conn_opts, assigns})
       controller_and_action =
         Phoenix.Token.sign(
           conn,

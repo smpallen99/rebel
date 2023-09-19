@@ -398,7 +398,7 @@ defmodule Rebel.Core do
 
       error ->
         if Application.get_env(:rebel, :logger) do
-          Logger.warn("failed to get store name: #{inspect(name)}, error: #{inspect(error)}")
+          Logger.warning("failed to get store name: #{inspect(name)}, error: #{inspect(error)}")
         end
 
         error
@@ -415,7 +415,7 @@ defmodule Rebel.Core do
 
       error ->
         if Application.get_env(:rebel, :logger) do
-          Logger.warn("failed to get session name: #{inspect(name)}, error: #{inspect(error)}")
+          Logger.warning("failed to get session name: #{inspect(name)}, error: #{inspect(error)}")
         end
 
         error
