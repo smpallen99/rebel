@@ -64,7 +64,7 @@ defmodule Rebel.Channel do
       end
 
       # @doc """
-      # A shordhand for `Phoenix.View.render_to_string/3. Injects the corresponding view.
+      # A shorthand for `Phoenix.View.render_to_string/3`. Injects the corresponding view.
       # """
       # def render_to_string(template, assigns) do
       #   view = __MODULE__.__rebel__().view
@@ -72,7 +72,7 @@ defmodule Rebel.Channel do
       # end
 
       @doc """
-      A shordhand for `Phoenix.View.render_to_string/3.
+      A shorthand for `Phoenix.View.render_to_string/3`.
       """
       def render_to_string(view, template, assigns) do
         Phoenix.View.render_to_string(view, template, assigns)
@@ -110,9 +110,9 @@ defmodule Rebel.Channel do
         do: Rebel.Core.same_topic(topic)
 
       def join(event, payload, socket) do
-        # Logger.warn "event: #{inspect event}"
-        # Logger.warn "payload: #{inspect payload}"
-        # Logger.warn "assigns: #{inspect socket.assigns}"
+        # Logger.warning "event: #{inspect event}"
+        # Logger.warning "payload: #{inspect payload}"
+        # Logger.warning "assigns: #{inspect socket.assigns}"
         [_ | broadcast_topic] = String.split(event, ":")
         # socket already contains controller and action
         socket_with_topic =
@@ -123,7 +123,7 @@ defmodule Rebel.Channel do
 
         {:ok, pid} = Rebel.start_link(socket_with_topic)
 
-        # Logger.warn "+++++++++ Channel join self: #{inspect self()}, rebel_pid #{inspect pid}"
+        # Logger.warning "+++++++++ Channel join self: #{inspect self()}, rebel_pid #{inspect pid}"
 
         socket_with_pid = assign(socket_with_topic, :__rebel_pid, pid)
 
@@ -148,7 +148,7 @@ defmodule Rebel.Channel do
       def handle_in("execjs", %{"ok" => [sender_encrypted, reply]}, socket) do
         # sender contains PID of the process which sent the query
         # sender is waiting for the result
-        # Logger.warn ".... sender_encrypted: #{inspect sender_encrypted}"
+        # Logger.warning ".... sender_encrypted: #{inspect sender_encrypted}"
         # Logger.info ".... reply: #{inspect reply}"
         {sender, ref} = sender(socket, sender_encrypted)
         # Logger.info "{sender, ref}: #{inspect {sender, ref}}"
@@ -163,7 +163,7 @@ defmodule Rebel.Channel do
       def handle_in("modal", %{"ok" => [sender_encrypted, reply]}, socket) do
         # sender contains PID of the process which sent the query
         # sender is waiting for the result
-        # Logger.warn ".... sender_encrypted: #{inspect sender_encrypted}"
+        # Logger.warning ".... sender_encrypted: #{inspect sender_encrypted}"
         # Logger.info ".... reply: #{inspect reply}"
         {sender, ref} = sender(socket, sender_encrypted)
         # Logger.info "{sender, ref}: #{inspect {sender, ref}}"

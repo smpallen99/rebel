@@ -4,8 +4,8 @@ defmodule Rebel.Mixfile do
   def project do
     [
       app: :rebel,
-      version: "0.2.3",
-      elixir: "~> 1.4",
+      version: "0.3.3",
+      elixir: "~> 1.12",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -21,7 +21,7 @@ defmodule Rebel.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     # Specify extra applications you'll use from Erlang/Elixir
-    [extra_applications: [:logger], mod: {Rebel.Application, []}]
+    [extra_applications: [:logger, :eex], mod: {Rebel.Application, []}]
   end
 
   # Dependencies can be Hex packages:
@@ -35,14 +35,14 @@ defmodule Rebel.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:phoenix, "~> 1.3"},
-      {:phoenix_html, "~> 2.0"},
-      {:phoenix_pubsub, "~> 1.0"},
-      {:phoenix_live_reload, "~> 1.0", only: :dev},
-      {:poison, "~> 3.1", override: true},
-      {:cowboy, "~> 1.0", only: :test},
-      {:ex_doc, "~> 0.0", only: :dev},
-      {:jason, "~> 1.1"}
+      {:phoenix, "~> 1.5.9"},
+      {:phoenix_html, "~> 3.0"},
+      {:phoenix_pubsub, "~> 2.0"},
+      {:phoenix_live_reload, "~> 1.3", only: :dev},
+      {:poison, "~> 4.0", override: true},
+      {:cowboy, "~> 2.7", only: :test},
+      {:ex_doc, "~> 0.24", only: :dev},
+      {:jason, "~> 1.2"}
     ]
   end
 end

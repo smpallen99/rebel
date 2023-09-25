@@ -180,8 +180,8 @@ defmodule Rebel do
   # Callbacks
 
   def init(state) do
-    # Logger.warn "Rebel.init state: #{inspect state}"
-    # Logger.warn "+++++ Rebel pid: #{inspect self()}"
+    # Logger.warning "Rebel.init state: #{inspect state}"
+    # Logger.warning "+++++ Rebel pid: #{inspect self()}"
     Process.flag(:trap_exit, true)
     {:ok, state}
   end
@@ -193,14 +193,21 @@ defmodule Rebel do
     {:noreply, state}
   end
 
-  @doc false
   def handle_info({:EXIT, pid, :killed}, state) when pid != self() do
     failed(state.socket, %RuntimeError{message: "Rebel Process #{inspect(pid)} has been killed."})
     {:noreply, state}
   end
 
-  @doc false
-  def handle_info({:EXIT, pid, {reason, stack}}, state) when pid != self() do
+  def handle_info({:EXIT, pid, {:noproc, process_info}}, state) when pid != self() do
+    # called process not running or responding
+    Logger.error(
+      "Rebel Process #{inspect(pid)} died because a called process failed #{inspect(process_info)}"
+    )
+
+    {:noreply, state}
+  end
+
+  def handle_info({:EXIT, pid, {reason, stack}}, state) when pid != self() and is_list(stack) do
     # subprocess died
     Logger.error("""
     Rebel Process #{inspect(pid)} died because of #{inspect(reason)}
@@ -319,7 +326,7 @@ defmodule Rebel do
           apply(channel, callback, [socket])
         rescue
           e ->
-            stacktrace = Exception.format_stacktrace(System.stacktrace())
+            stacktrace = Exception.format_stacktrace(__STACKTRACE__)
             failed(socket, e, stacktrace)
         end
       end)
@@ -357,7 +364,7 @@ defmodule Rebel do
         fun.()
       rescue
         e ->
-          stacktrace = Exception.format_stacktrace(System.stacktrace())
+          stacktrace = Exception.format_stacktrace(__STACKTRACE__)
           failed(socket, e, stacktrace)
       end
     end)
@@ -411,7 +418,7 @@ defmodule Rebel do
         end
       rescue
         e ->
-          stacktrace = Exception.format_stacktrace(System.stacktrace())
+          stacktrace = Exception.format_stacktrace(__STACKTRACE__)
           failed(socket, e, stacktrace)
       after
         # push reply to the browser, to re-enable controls
@@ -483,9 +490,9 @@ defmodule Rebel do
 
   defp do_push_or_broadcast(socket, pid, ref, message, payload, function) do
     token = tokenize(socket, {pid, ref})
-    # Logger.warn "{pid,ref} token " <> inspect({pid, ref}) <> " : " <> inspect(token)
-    # Logger.warn "message: #{inspect message}"
-    # Logger.warn "payload: #{inspect payload}"
+    # Logger.warning "{pid,ref} token " <> inspect({pid, ref}) <> " : " <> inspect(token)
+    # Logger.warning "message: #{inspect message}"
+    # Logger.warning "payload: #{inspect payload}"
     m = payload |> Enum.into(%{}) |> Map.merge(%{sender: token})
     function.(socket, message, m)
   end

@@ -343,7 +343,7 @@ defmodule Rebel.Query do
   end
 
   defp data_attr_warn!(data, set, on) do
-    Logger.warn("""
+    Logger.warning("""
     Updating data-* attribute or property is not recommended. You should use :data method instead:
 
         socket |> update(data: "#{data}", set: "#{set}", on: "#{on}")
